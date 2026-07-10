@@ -1,0 +1,9 @@
+config:
+  MD013: false
+  MD024:
+    siblings_only: true
+  MD025: false
+
+ignores:
+  - .git/**
+  - docs/Repository_Template_Development_Guide.md
