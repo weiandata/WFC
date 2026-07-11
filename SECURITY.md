@@ -17,14 +17,12 @@ channel. Response times depend on severity and repository maintenance status.
 
 ## Supported Versions
 
-Before the first release, the repository owner must replace this table with the
-actual support policy. Security fixes are normally provided only for versions
-marked as supported.
+Security fixes are provided only for versions marked as supported.
 
 | Version | Supported |
 | --- | --- |
-| Unreleased development branch | Yes |
-| Earlier versions | No |
+| 1.0.x | Yes |
+| < 1.0 | No |
 
 ## Responsible Disclosure
 

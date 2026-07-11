@@ -1,0 +1,117 @@
+url: https://weiandata.github.io/WFC/
+
+template:
+  bootstrap: 5
+  bootswatch: flatly
+
+development:
+  mode: release
+
+home:
+  title: WFC
+  description: Workflow-oriented survey weight calibration for R.
+
+navbar:
+  structure:
+    left: [intro, reference, articles, news, chinese]
+    right: [github]
+  components:
+    chinese:
+      text: Simplified Chinese README
+      href: https://github.com/weiandata/WFC/blob/main/README.zh-CN.md
+
+reference:
+  - title: Dimensions and Targets
+    contents:
+      - wf_dims
+      - wf_target_population
+      - wf_target_reference
+      - wf_target_manual
+      - wf_target_shrink
+      - wf_target_propensity
+  - title: Precheck and Remediation
+    contents:
+      - wf_precheck
+      - wf_suggest_collapse
+      - wf_apply_collapse
+      - wf_collapse_ladder
+      - wf_suggest_ladder
+  - title: Calibration and Guided Workflow
+    contents:
+      - wf_calibrate
+      - wf_rake
+      - wf_poststrat
+      - wf_plan_poststrat
+      - wf_autoweigh
+      - wf_auto_trim
+  - title: Production Pipelines
+    contents:
+      - wf_pipeline
+      - wf_run
+      - wf_validate
+      - wf_audit_export
+      - wf_compose
+  - title: Methods, Fusion, and Diagnostics
+    contents:
+      - wf_propensity
+      - wf_attrition
+      - wf_blend
+      - wf_influence
+      - wf_diagnose
+      - wf_report
+  - title: Variance and Ecosystem Bridges
+    contents:
+      - wf_replicates
+      - wf_variance
+      - as_svydesign
+      - as_svrepdesign
+      - wfc-tidiers
+  - title: Data
+    contents:
+      - wfc_example
+  - title: S3 Methods
+    contents:
+      - as.data.frame.wf_quality_report
+      - as.data.frame.wf_variance_result
+      - plot.wf_auto_trim
+      - plot.wf_blend_result
+      - plot.wf_diagnostics
+      - plot.wf_propensity_weights
+      - plot.wf_weights
+      - print.wf_attrition_weights
+      - print.wf_auto_trim
+      - print.wf_autoweigh_result
+      - print.wf_blend_result
+      - print.wf_collapse_plan
+      - print.wf_diagnostics
+      - print.wf_influence
+      - print.wf_ladder_draft
+      - print.wf_pipeline
+      - print.wf_poststrat_plan
+      - print.wf_precheck
+      - print.wf_quality_report
+      - print.wf_replicate_weights
+      - print.wf_validation
+      - print.wf_variance_result
+      - print.wf_weights
+      - summary.wf_poststrat_plan
+
+articles:
+  - title: Core Workflow
+    navbar: Core workflow
+    contents:
+      - precheck-execute-diagnose
+      - bringing-population-data
+      - dirty-data-and-infeasibility
+  - title: Guided and Production Use
+    navbar: Guided and production use
+    contents:
+      - usability-foundations
+      - guided-workflow
+      - production-infrastructure
+  - title: Ecosystem and Methods
+    navbar: Ecosystem and methods
+    contents:
+      - ecosystem-interoperability
+      - methods-soft-ebal
+      - attrition-influence

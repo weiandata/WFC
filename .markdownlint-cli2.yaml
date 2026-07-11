@@ -6,4 +6,8 @@ config:
 
 ignores:
   - .git/**
-  - docs/Repository_Template_Development_Guide.md
+  # Historical design and planning documents imported from the WFC package
+  # development archive; kept verbatim for provenance, not linted.
+  - docs/superpowers/**
+  - inst/design/**
+  - bench/**

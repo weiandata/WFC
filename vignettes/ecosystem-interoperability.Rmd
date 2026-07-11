@@ -1,0 +1,131 @@
+---
+title: "Survey and broom interoperability in WFC 0.12"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Survey and broom interoperability in WFC 0.12}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", message = FALSE)
+has_survey <- requireNamespace("survey", quietly = TRUE)
+has_generics <- requireNamespace("generics", quietly = TRUE)
+```
+
+WFC 0.12 keeps calibration and downstream analysis separate. WFC constructs
+and checks weights; the survey ecosystem estimates means, regressions, totals,
+and tables. Bridges align by exact unit ID, so data may be reordered but cannot
+silently lose or gain rows.
+
+## Prepare calibrated weights
+
+```{r}
+library(WFC)
+data("wfc_example", package = "WFC")
+
+sample <- wfc_example$sample
+sample$outcome <- as.numeric(sample$age == "young")
+target <- wf_target_population(
+  wfc_example$population,
+  key_map = c(gender = "gender", age = "age"),
+  count = "count",
+  dims = wfc_example$dims,
+  by = "province"
+)
+weights <- wf_rake(sample, target, id = "id")
+```
+
+## Use standard survey estimators
+
+`as_svydesign()` adds `.wf_weight` to a copy of the analysis data and returns a
+standard survey design. Cluster, strata, finite-population, and nesting controls
+can be supplied when the source design requires them.
+
+```{r survey-design, eval=has_survey}
+survey_design <- as_svydesign(weights, sample, id = "id")
+survey::svymean(~outcome, survey_design)
+```
+
+The result can enter srvyr without another weight join because srvyr accepts
+`survey.design2` and `svyrep.design` objects:
+
+```{r srvyr, eval=FALSE}
+srvyr_design <- srvyr::as_survey(survey_design)
+```
+
+The `survey`, `srvyr`, and their data-manipulation dependencies remain optional;
+none is imported by WFC.
+
+## Preserve replicate uncertainty
+
+`as_svrepdesign()` maps WFC bootstrap, unstratified or stratified jackknife, and
+BRR metadata to survey's corresponding replication types. It fixes
+full-estimate-centered MSE semantics so the survey and WFC variance formulas
+agree.
+
+```{r replicate-design, eval=has_survey}
+refit <- function(data, base_weights) {
+  data$.base_weight <- base_weights
+  wf_rake(
+    data,
+    target,
+    id = "id",
+    init_weight = ".base_weight",
+    precheck = FALSE
+  )
+}
+
+replicate_weights <- wf_replicates(
+  sample,
+  refit,
+  method = "jackknife",
+  id = "id"
+)
+replicate_design <- as_svrepdesign(
+  replicate_weights,
+  sample,
+  id = "id"
+)
+
+wfc_variance <- wf_variance(
+  replicate_weights,
+  function(w, data) sum(w * data$outcome) / sum(w),
+  sample
+)
+survey_mean <- survey::svymean(~outcome, replicate_design)
+
+c(
+  wfc_se = wfc_variance$table$se,
+  survey_se = as.numeric(survey::SE(survey_mean))
+)
+```
+
+## Project results with generics
+
+WFC registers broom-style methods only when the suggested `generics` namespace
+is loaded. Every method returns a base data frame with stable English column
+names.
+
+```{r tidiers, eval=has_generics}
+diagnostics <- wf_diagnose(weights, target)
+
+head(generics::tidy(weights))
+generics::glance(diagnostics)
+
+augmented <- generics::augment(weights, data = sample, id = "id")
+head(augmented[c("id", ".weight", ".feature")])
+```
+
+`tidy()` also projects `wf_diagnostics`, `wf_blend_result`, and
+`wf_variance_result`; `glance()` returns a stable one-row summary for each of
+those result classes. `augment()` is intentionally limited to `wf_weights`,
+where an exact ID join has a clear unit-level meaning.
+
+## Treat ID errors as data-contract failures
+
+Both bridges and `augment()` require unique, non-missing IDs and identical ID
+sets between the WFC result and analysis data. Missing, extra, or duplicated
+units raise `wf_error_schema`. Existing reserved output columns also raise an
+error rather than being overwritten. These checks preserve the same discipline
+as calibration precheck at the ecosystem boundary.
