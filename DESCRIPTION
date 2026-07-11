@@ -1,0 +1,41 @@
+Package: WFC
+Title: Workflow-Oriented Survey Weight Calibration
+Version: 1.0.0
+Authors@R: c(
+    person(given = "Kunxiang", family = "Ma", email = "mkx07080412@gmail.com", role = c("aut", "cre")),
+    person("WEIAN DATA TECH (Beijing) Co., Ltd.", role = c("cph", "fnd")))
+Author: Kunxiang Ma [aut, cre], WEIAN DATA TECH (Beijing) Co., Ltd. [cph, fnd]
+Maintainer: Kunxiang Ma <mkx07080412@gmail.com>
+Description: Provides a disciplined precheck, execution, and diagnostics workflow
+    for survey weighting and raking with schema-agnostic dimensions and canonical
+    target objects, including an auditable guided workflow and bilingual
+    human-facing reports. Converts calibrated and replicate weights into standard
+    survey designs, provides optional broom-style result projections, and records
+    serializable production pipeline provenance. Supports soft calibration with
+    auditable margin relaxation and entropy balancing for exact moment matching,
+    plus panel attrition weighting, high-influence unit diagnostics, Fay's
+    balanced repeated replication, and opt-in parallel execution for long runs.
+License: MIT + file LICENSE
+URL: https://github.com/weiandata/WFC,
+    https://weiandata.github.io/WFC/
+BugReports: https://github.com/weiandata/WFC/issues
+Encoding: UTF-8
+Depends:
+    R (>= 3.6.0)
+Imports:
+    parallel,
+    stats,
+    utils
+Roxygen: list(markdown = TRUE)
+LazyData: true
+Suggests:
+    cli,
+    covr,
+    generics,
+    knitr,
+    rmarkdown,
+    survey,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.0.0

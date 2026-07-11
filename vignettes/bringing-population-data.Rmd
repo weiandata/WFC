@@ -1,0 +1,93 @@
+---
+title: "Bringing your own population data"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Bringing your own population data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+Population files rarely use the same column names as a survey. WFC handles this
+at the boundary through an explicit key map; the calibration engine only sees a
+validated canonical target.
+
+## Map an arbitrary schema
+
+```{r}
+library(WFC)
+data("wfc_example", package = "WFC")
+
+sample <- wfc_example$sample
+sample$region_code <- sample$province
+population <- wfc_example$population
+names(population) <- c("region_code", "sex_key", "age_band", "n_people")
+
+dims <- wf_dims(
+  gender = c("female", "male"),
+  age = c("young", "old")
+)
+
+target <- wf_target_population(
+  population,
+  key_map = c(gender = "sex_key", age = "age_band"),
+  count = "n_people",
+  dims = dims,
+  by = "region_code"
+)
+
+target$dims
+vapply(target$groups, function(group) group$total, numeric(1))
+```
+
+`key_map` names are WFC dimension names and its values are source column names.
+Category keys are compared as character values. Counts must be finite,
+non-missing, and non-negative.
+
+## Choose the target scale
+
+Population totals are the default. For a sample-scale calibration, WFC keeps
+the population shares but rescales each group total to its sample size.
+
+```{r}
+sample_scale <- wf_target_population(
+  population,
+  key_map = c(gender = "sex_key", age = "age_band"),
+  count = "n_people",
+  dims = dims,
+  by = "region_code",
+  scale = "sample",
+  sample = sample
+)
+
+vapply(sample_scale$groups, function(group) group$total, numeric(1))
+```
+
+Use `scale = "custom"` with named `totals` when another reporting total is the
+authority.
+
+## Retain joint cells for post-stratification
+
+Raking needs margins. Post-stratification additionally needs the joint
+population cells, requested explicitly with `keep_joint = TRUE`.
+
+```{r}
+joint_target <- wf_target_population(
+  population,
+  key_map = c(gender = "sex_key", age = "age_band"),
+  count = "n_people",
+  dims = dims,
+  by = "region_code",
+  keep_joint = TRUE
+)
+
+names(joint_target$joint)
+head(joint_target$joint[[1]])
+```
+
+Do not reshape population data by hand after constructing a target. Rebuild the
+target from the authoritative source so its totals, margins, joint cells, and
+metadata remain consistent.

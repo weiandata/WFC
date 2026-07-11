@@ -8,3 +8,26 @@ Thumbs.db
 
 # Local environment and secrets
 .env
+
+# R session and build artifacts
+.Rhistory
+.RData
+.Ruserdata
+*.RData
+*.rdata
+Rplots.pdf
+.Rproj.user/
+*.Rcheck/
+..Rcheck/
+*.tar.gz
+build/
+
+# Local tooling and working directories
+.codegraph/
+.worktrees/
+tmp/
+
+# Local private data and Chinese working documents (never commit)
+private-data/
+*.xlsx
+ZH/

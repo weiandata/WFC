@@ -1,19 +1,20 @@
 # Documentation
 
-Use this directory for durable project documentation that does not belong in
-the root README. Documentation should explain purpose and constraints before
-implementation details and should be updated in the same change as the behavior
-it describes.
+Durable project documentation for the WFC R package that does not belong in
+the root README.
 
 ## Contents
 
-- [Repository standard](repository-standard.md) summarizes the baseline applied
-  by this template.
-- [Repository Template Development Guide](Repository_Template_Development_Guide.md)
-  is the approved specification used to develop this golden template.
+- [Repository standard](repository-standard.md) summarizes the governance
+  baseline applied by the WeianData repository template.
+- [Development plans and specs](superpowers/) archive the per-release design
+  specifications and implementation plans from 0.1.0 through 1.0.0.
 
-Generated repositories should replace template-development material with the
-documentation their project requires, such as architecture, decisions,
-interfaces, methods, operations, validation, and release guidance. Avoid empty
-directories and duplicate policy; link to the Engineering Handbook for
-normative rules.
+## Related package documentation
+
+- Design authority documents live in [`inst/design/`](../inst/design/) and are
+  shipped with the package; see [`AGENTS.md`](../AGENTS.md) for how they are
+  used.
+- User-facing guides are the vignettes in [`vignettes/`](../vignettes/), and
+  the release history is in [`NEWS.md`](../NEWS.md).
+- Benchmarks live in [`bench/`](../bench/).

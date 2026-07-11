@@ -1,0 +1,137 @@
+---
+title: "Production infrastructure in WFC 0.13"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Production infrastructure in WFC 0.13}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", message = FALSE)
+```
+
+WFC 0.13 adds a production layer over the existing engines. The layer does not
+change raking, post-stratification, propensity correction, or diagnostics. It
+records how a recurring weighting round should be run, executes that declared
+round, checks whether new weights drifted from a reference release, and writes
+machine-readable audit records.
+
+## Declare a pipeline
+
+The pipeline specification is a plain list with a stable hash. Runtime data are
+passed to `wf_run()`, so the spec can be versioned separately from each survey
+wave.
+
+```{r}
+library(WFC)
+data("wfc_example", package = "WFC")
+
+spec <- wf_pipeline(
+  target = list(
+    mode = "population",
+    key_map = c(gender = "gender", age = "age"),
+    count = "count",
+    by = "province"
+  ),
+  stages = list(
+    calibrate = list(method = "raking", id = "id", tol = 1e-8)
+  ),
+  validate = list(max_deff = 6, max_margin_dev = 1e-4)
+)
+
+spec
+```
+
+The same declaration can use `mode = "reference"`, `mode = "manual"`, or a
+ready `wf_target` object when the target is already constructed by an upstream
+review step.
+
+## Run the declared round
+
+`wf_run()` builds the target, executes optional pre-calibration stages, runs the
+calibration stage, and attaches pipeline provenance to the returned
+`wf_weights`.
+
+```{r}
+weights <- wf_run(
+  spec,
+  sample = wfc_example$sample,
+  dims = wfc_example$dims,
+  population = wfc_example$population
+)
+
+weights$provenance$pipeline[c("hash", "target_mode")]
+weights$pipeline_validation$ok
+```
+
+Numeric `base_weight` values are accepted so the same pipeline can be used as a
+`wf_replicates()` refit body:
+
+```{r eval=FALSE}
+refit <- function(data, base_weights) {
+  wf_run(
+    spec,
+    sample = data,
+    dims = wfc_example$dims,
+    population = wfc_example$population,
+    base_weight = base_weights
+  )
+}
+```
+
+An optional `propensity` stage may be declared before `calibrate`; its
+pseudo-weights are multiplied into the calibration initial weights.
+
+## Check drift against a reference release
+
+`wf_validate()` compares new weights with a reference release. It checks group
+coverage, design effect, effective sample size, total weight, and matched-unit
+weight-ratio drift. When a target is supplied, margin residual drift is checked
+as well.
+
+```{r}
+reference <- weights
+new <- weights
+new$data$weight[1] <- new$data$weight[1] * 3
+
+drift <- wf_validate(
+  new,
+  reference,
+  max_deff_delta = 0.01,
+  max_ratio_p99 = 1.1,
+  on_issue = "none"
+)
+
+drift
+drift$issues[c("check", "group", "severity")]
+```
+
+Use `on_issue = "warn"` in automated monitoring to emit a classed
+`wf_warning_quality`, or `on_issue = "error"` when drift should stop the
+pipeline.
+
+## Export an audit record
+
+`wf_audit_export()` writes dependency-free JSON. The record contains result
+provenance, pipeline metadata, summary weight statistics, optional guided
+workflow ledgers, hashes of named inputs, and user-supplied metadata.
+
+```{r}
+audit_file <- tempfile(fileext = ".json")
+wf_audit_export(
+  weights,
+  audit_file,
+  inputs = list(
+    sample = wfc_example$sample,
+    population = wfc_example$population
+  ),
+  extra = list(round = "example")
+)
+
+file.exists(audit_file)
+```
+
+Keep the audit record with published estimates. It is the machine-readable
+counterpart to the human-facing `wf_report()` output and the guided workflow
+decision ledger.

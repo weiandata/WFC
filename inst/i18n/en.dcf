@@ -1,0 +1,92 @@
+report_title: Weighting quality report
+report_audience: Audience
+audience_manager: manager
+audience_analyst: analyst
+verdict_green: publishable separately
+verdict_yellow: usable with caveats; prefer aggregated publication
+verdict_red: do not publish separately; merge or remediate
+action_weights_green: publishable separately
+action_weights_yellow: usable with caveats; prefer aggregated publication
+action_weights_red: do not publish separately; merge or remediate
+action_blend_green: publishable separately
+action_blend_yellow: usable with caveats; inspect lambda sensitivity
+action_blend_red: do not publish separately; one source lacks support
+section_propensity_overlap: Propensity overlap
+section_propensity_quantiles: Propensity quantiles
+section_propensity_balance: Propensity covariate balance
+section_poststrat_cells: Post-stratification cells
+section_poststrat_collapse_map: Post-stratification collapse map
+section_pipeline_stages: Pipeline stages
+section_blend_lambda: Blend lambda
+section_blend_sensitivity: Blend sensitivity
+section_blend_source_support: Blend source support
+column_group: Group
+column_n: Sample size
+column_ess: Effective sample size
+column_deff: Design effect
+column_verdict: Stable verdict
+column_verdict_label: Verdict
+column_light: Traffic light
+column_publish_separately: Publish separately
+column_action: Recommended action
+column_iterations: Iterations
+column_converged: Converged
+column_trimmed: Trimmed weights
+column_margin_maxerr: Maximum margin error
+column_mean_w: Mean weight
+column_min_w: Minimum weight
+column_max_w: Maximum weight
+column_max_over_mean: Maximum over mean
+column_estimate: Estimate
+column_cell_weight: Cell weight
+column_n_cells: Number of cells
+column_lambda: Lambda
+column_lambda_reason: Lambda reason
+column_lambda_trimmed: Lambda trimmed
+column_source: Source
+column_quantile: Quantile
+column_propensity: Propensity
+column_threshold: Threshold
+column_n_boundary: Boundary count
+column_n_online: Online sample size
+column_variable: Variable
+column_level: Level
+column_smd_unweighted: Unweighted SMD
+column_smd_weighted: Weighted SMD
+column_stage: Stage
+column_label: Label
+column_method: Method
+plot_group_title: Group %s
+plot_weight: weight
+plot_design_effect: design effect
+plot_effective_sample_share: effective sample share
+plot_trim_cap: trim cap (x mean)
+plot_worst_deff: worst design effect
+plot_worst_residual: worst margin residual
+plot_online_lambda: online-source lambda
+plot_fused_estimate: fused estimate
+plot_propensity_overlap: Propensity overlap
+plot_online_propensity: online-membership propensity
+plot_density: density
+plot_online: online
+plot_reference: reference
+plot_covariate_balance: Covariate balance
+plot_absolute_smd: absolute standardized mean difference
+plot_unweighted: unweighted
+plot_weighted: weighted
+autoweigh_start: Starting guided weighting: %d rows, %d group(s), %d dimension(s).
+autoweigh_target_ready: Using the supplied canonical target.
+autoweigh_target_built: Built a canonical target from the supplied population data.
+autoweigh_method: Selected calibration method: %s.
+autoweigh_precheck_ok: Precheck passed: sample and target are compatible.
+autoweigh_precheck_blocked: Precheck found %d blocking issue(s); inspecting declared remediations.
+autoweigh_collapse: Applied declared merge for dimension '%s' after issue '%s' in group '%s'.
+autoweigh_trim_applied: Applied the recommended weight cap of %.3gx the mean.
+autoweigh_trim_manual: Applied the declared trim bounds [%.3g, %.3g] times the mean.
+autoweigh_trim_none: The untrimmed result meets the declared quality criteria.
+autoweigh_trim_no_solution: No trim candidate meets every declared quality criterion; continuing untrimmed.
+autoweigh_calibrating: Running the existing %s calibration engine.
+autoweigh_done: Weighting finished: %d weights produced; overall verdict: %s.
+autoweigh_prompt_collapse: Apply the declared collapse remediation? (yes/no):
+autoweigh_prompt_trim: Apply the recommended trim cap? (yes/no):
+autoweigh_print_header: Guided weighting result
