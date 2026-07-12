@@ -202,7 +202,8 @@
 #' @param rho Fay's BRR shrinkage parameter in `[0, 1)`. Used only when
 #'   `method = "brr"`; `rho = 0` gives standard BRR.
 #' @param parallel Whether to re-run replicate refits with forked parallelism
-#'   where available. Windows falls back to serial execution.
+#'   where available, using at most two workers. Windows falls back to serial
+#'   execution.
 #' @param progress Whether to show a `cli` progress bar when `cli` is installed.
 #' @return A `wf_replicate_weights` object.
 #' @export

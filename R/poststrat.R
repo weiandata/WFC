@@ -16,7 +16,8 @@
 #' @param precheck Reserved for the workflow contract; validation always runs.
 #' @param tol Relative tolerance for enforced group-total checks.
 #' @param parallel Whether to process independent target groups with forked
-#'   parallelism where available. Windows falls back to serial execution.
+#'   parallelism where available, using at most two workers. Windows falls back
+#'   to serial execution.
 #' @param progress Whether to show a `cli` progress bar when `cli` is installed.
 #'
 #' @return A `wf_weights` object with `cell_report` and `collapse_map`.

@@ -198,7 +198,9 @@
   if (length(cores) != 1L || is.na(cores) || cores < 1L) {
     cores <- 1L
   }
-  min(n, cores)
+  # CRAN policy requires packages to use no more than two cores at once,
+  # including when parallel execution is explicitly requested by the user.
+  min(n, cores, 2L)
 }
 
 #' Start a cli progress bar when requested and available.

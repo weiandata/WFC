@@ -42,7 +42,8 @@ wf_rake(
 starts from uniform weights (unchanged behaviour).}
 
 \item{parallel}{Whether to process independent target groups with forked
-parallelism where available. Windows falls back to serial execution.}
+parallelism where available, using at most two workers. Windows falls back
+to serial execution.}
 
 \item{progress}{Whether to show a \code{cli} progress bar when \code{cli} is installed.}
 }

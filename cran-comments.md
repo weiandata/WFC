@@ -19,12 +19,11 @@ Local `R CMD check --as-cran --no-manual`:
 
 * 0 errors
 * 0 warnings
-* 0 notes
+* 1 note
 
-Remote repository-index and system-clock lookups were disabled for the local
-check because the release environment has no outbound network access. All
-package, code, documentation, example, test, and vignette checks completed.
-There are no downstream dependencies because this is a first submission.
+The note is the expected "New submission" note. All package, code,
+documentation, example, test, and vignette checks completed. There are no
+downstream dependencies because this is a first submission.
 
 ## Additional verification
 

@@ -363,7 +363,7 @@ wf_validate(round1, weights, target = target)
 ```
 
 Long grouped calibrations and replicate refits support opt-in fork parallelism
-and optional `cli` progress bars:
+(capped at two workers for CRAN compliance) and optional `cli` progress bars:
 
 ```r
 weights_parallel <- wf_rake(

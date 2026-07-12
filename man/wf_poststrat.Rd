@@ -43,7 +43,8 @@ weights are one.}
 \item{tol}{Relative tolerance for enforced group-total checks.}
 
 \item{parallel}{Whether to process independent target groups with forked
-parallelism where available. Windows falls back to serial execution.}
+parallelism where available, using at most two workers. Windows falls back
+to serial execution.}
 
 \item{progress}{Whether to show a \code{cli} progress bar when \code{cli} is installed.}
 }

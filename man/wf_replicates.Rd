@@ -43,7 +43,8 @@ the calibration pipeline using \code{weights} as the base/initial weights.}
 \code{method = "brr"}; \code{rho = 0} gives standard BRR.}
 
 \item{parallel}{Whether to re-run replicate refits with forked parallelism
-where available. Windows falls back to serial execution.}
+where available, using at most two workers. Windows falls back to serial
+execution.}
 
 \item{progress}{Whether to show a \code{cli} progress bar when \code{cli} is installed.}
 }

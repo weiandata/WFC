@@ -111,7 +111,8 @@
 #' @param init_weight Optional column of initial weights. If `NULL`, raking
 #'   starts from uniform weights (unchanged behaviour).
 #' @param parallel Whether to process independent target groups with forked
-#'   parallelism where available. Windows falls back to serial execution.
+#'   parallelism where available, using at most two workers. Windows falls back
+#'   to serial execution.
 #' @param progress Whether to show a `cli` progress bar when `cli` is installed.
 #'
 #' @return A `wf_weights` object.

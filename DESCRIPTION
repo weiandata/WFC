@@ -15,9 +15,11 @@ Description: Provides a disciplined precheck, execution, and diagnostics workflo
     auditable margin relaxation and entropy balancing for exact moment matching,
     plus panel attrition weighting, high-influence unit diagnostics, Fay's
     balanced repeated replication, and opt-in parallel execution for long runs.
+    Calibration methods follow Deville and Saerndal (1992)
+    <doi:10.1080/01621459.1992.10475217>, and entropy balancing follows
+    Hainmueller (2012) <doi:10.1093/pan/mpr025>.
 License: MIT + file LICENSE
-URL: https://github.com/weiandata/WFC,
-    https://weiandata.github.io/WFC/
+URL: https://github.com/weiandata/WFC
 BugReports: https://github.com/weiandata/WFC/issues
 Encoding: UTF-8
 Depends:
