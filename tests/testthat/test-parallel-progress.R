@@ -2,7 +2,8 @@ test_that("parallel worker resolution never exceeds the CRAN two-core limit", {
   old <- options(wfc.parallel.cores = 64L)
   on.exit(options(old), add = TRUE)
 
-  expect_equal(.wf_parallel_workers(100L, use_parallel = TRUE), 2L)
+  expected <- if (identical(.Platform$OS.type, "windows")) 1L else 2L
+  expect_equal(.wf_parallel_workers(100L, use_parallel = TRUE), expected)
 })
 
 test_that("wf_rake parallel execution matches serial output", {
