@@ -1,5 +1,8 @@
 # WFC 1.0.0
 
+* Standardized the maintainer and company contact identities, adopted GPL
+  (>= 2), and added `inst/COPYRIGHTS` for dependency copyright boundaries.
+
 API freeze and publication release. This release closes the 0.10 -> 1.0
 roadmap by freezing the public WFC core API, documenting the deprecation policy,
 and adding release infrastructure for CRAN and the bilingual pkgdown site.

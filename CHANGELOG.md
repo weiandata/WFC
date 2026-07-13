@@ -11,9 +11,11 @@ This file tracks repository-level milestones.
 
 ## [Unreleased]
 
-### Added
+### Changed
 
-- Add future changes here before release.
+- Standardize the maintainer and company contact identities.
+- Re-license WFC under GPL (>= 2) and document separately distributed
+  dependency copyright boundaries in `inst/COPYRIGHTS`.
 
 ## [1.0.0] - 2026-07-11
 

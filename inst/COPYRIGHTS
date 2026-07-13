@@ -1,0 +1,68 @@
+WFC copyright and licensing notice
+==================================
+
+Copyright (C) 2026 WEIAN DATA TECH (Beijing) Co., Ltd.
+(惟安数据科技（北京）有限公司)
+Contact: contact@weiandata.com
+
+WFC source code, documentation, tests, and bundled simulated data are
+copyrighted by WEIAN DATA TECH (Beijing) Co., Ltd. and distributed under the
+GNU General Public License version 2 or, at the recipient's option, any later
+version (GPL >= 2).
+
+External optional dependencies
+------------------------------
+
+WFC can integrate with the separately distributed R packages listed below.
+Their source code is not bundled in WFC, and their authors and copyright
+holders retain all rights in those packages.
+
+Package: cli
+Use: optional progress display
+Upstream project: https://CRAN.R-project.org/package=cli
+License: MIT + file LICENSE
+
+Package: covr
+Use: optional test coverage reporting
+Upstream project: https://CRAN.R-project.org/package=covr
+License: MIT + file LICENSE
+
+Package: generics
+Use: optional generic-method interoperability
+Upstream project: https://CRAN.R-project.org/package=generics
+License: MIT + file LICENSE
+
+Package: knitr
+Use: vignette generation
+Upstream project: https://CRAN.R-project.org/package=knitr
+License: GPL
+
+Package: rmarkdown
+Use: vignette rendering
+Upstream project: https://CRAN.R-project.org/package=rmarkdown
+License: GPL-3
+
+Package: survey
+Use: optional survey-design interoperability and numerical comparison
+Upstream project: https://CRAN.R-project.org/package=survey
+License: GPL-2 | GPL-3
+
+Package: testthat
+Use: package test suite
+Upstream project: https://CRAN.R-project.org/package=testthat
+License: MIT + file LICENSE
+
+R packages parallel, stats, and utils are part of R. These dependency
+references do not imply endorsement of WFC by the external package authors.
+The dependency review was completed on 2026-07-14.
+
+License
+-------
+
+The complete WFC package is distributed under the GNU General Public License
+version 2 or, at the recipient's option, any later version (GPL >= 2). Standard
+copies of the GPL are supplied with R and are available at
+https://www.R-project.org/Licenses/.
+
+Copyright in WFC belongs to WEIAN DATA TECH (Beijing) Co., Ltd. Copyright in
+external dependencies remains with their respective holders.

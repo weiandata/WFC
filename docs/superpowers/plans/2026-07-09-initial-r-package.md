@@ -74,12 +74,13 @@ Package: weightflow
 Title: Workflow-Oriented Survey Weight Calibration
 Version: 0.1.0
 Authors@R: c(
-    person("Weightflow", "Contributors", email = "weightflow-maintainers@example.com", role = c("aut", "cre"))
+    person("Kunxiang", "Ma", email = "makunxiang@weiandata.com", role = c("aut", "cre")),
+    person("WEIAN DATA TECH (Beijing) Co., Ltd.", email = "contact@weiandata.com", role = c("cph", "fnd"))
   )
 Description: Provides a disciplined precheck, execution, and diagnostics workflow
     for survey weighting and raking with schema-agnostic dimensions and canonical
     target objects.
-License: MIT + file LICENSE
+License: GPL (>= 2)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2

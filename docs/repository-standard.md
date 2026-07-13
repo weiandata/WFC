@@ -49,8 +49,9 @@ is normative and takes precedence; this summary does not redefine its rules.
 - Report vulnerabilities through the private channel in `SECURITY.md`.
 - Apply least privilege, supported dependencies, risk-appropriate review, and
   required security checks.
-- Select an approved license or explicit proprietary notice before distribution
-  or external reliance.
+- Apply the R-package GPL (>= 2) profile and dependency copyright boundary in
+  the company handbook's copyright and licensing policy before distribution or
+  external reliance.
 
 ## Lifecycle
 

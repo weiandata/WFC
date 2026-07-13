@@ -15,7 +15,7 @@ Version 0.12 implements Release 0.12 from
 4. a frozen core-package contract for the separate WFCstudio sibling kickoff.
 
 All copyright remains with WEIAN DATA TECH (Beijing) Co., Ltd. Every commit is
-authored and committed as `WEIAN DATA <contact@weiandata.com>`.
+authored and committed as `Kunxiang Ma <makunxiang@weiandata.com>`.
 
 ## Scope
 

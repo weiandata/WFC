@@ -12,6 +12,8 @@ This is the initial CRAN submission for WFC 1.0.0. The package was previously
 developed under the name `weightflow`, but that package name is already in use
 on CRAN by an unrelated package. The 1.0.0 release freezes the public WFC core
 API and documents the compatibility policy in `inst/stability/api-freeze.md`.
+WFC is distributed under GPL (>= 2); `inst/COPYRIGHTS` records the copyright
+boundary for separately distributed optional dependencies.
 
 ## R CMD check results
 

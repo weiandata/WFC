@@ -7,13 +7,16 @@ Ltd. (惟安数据科技（北京）有限公司). All git commits must be autho
 committed under the maintainer's company identity
 `Kunxiang Ma <makunxiang@weiandata.com>` (enforced via local git config;
 never commit under a personal non-company identity).
-`contact@weiandata.com` is reserved as the company's CRAN submission and
-security contact address and is not used for git commits. Any new file,
+`contact@weiandata.com` is the company, security, and licensing contact and is
+not used for git commits. Any new file,
 document, or release that carries an attribution or copyright notice must
 name WEIAN DATA TECH as the copyright holder. For CRAN compliance,
 `DESCRIPTION` keeps Kunxiang Ma as maintainer (`cre`) while the company holds
 `cph` and `fnd` roles. This policy overrides all other conventions in this
 repository.
+
+The package is distributed under GPL (>= 2). Direct dependencies remain under
+their own licenses and are documented at `inst/COPYRIGHTS`.
 
 ## Project Authority
 

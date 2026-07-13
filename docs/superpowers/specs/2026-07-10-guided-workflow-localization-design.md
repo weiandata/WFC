@@ -14,7 +14,7 @@ The release implements P7-P9 from `inst/design/wfc_future_design.md`:
 - English internals with localizable rendering only.
 
 All project copyright remains with WEIAN DATA TECH (Beijing) Co., Ltd. Every
-commit is authored and committed as `WEIAN DATA <contact@weiandata.com>`.
+commit is authored and committed as `Kunxiang Ma <makunxiang@weiandata.com>`.
 
 ## Scope
 

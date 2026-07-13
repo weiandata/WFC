@@ -2,10 +2,11 @@ Package: WFC
 Title: Workflow-Oriented Survey Weight Calibration
 Version: 1.0.0
 Authors@R: c(
-    person(given = "Kunxiang", family = "Ma", email = "mkx07080412@gmail.com", role = c("aut", "cre")),
-    person("WEIAN DATA TECH (Beijing) Co., Ltd.", role = c("cph", "fnd")))
+    person(given = "Kunxiang", family = "Ma", email = "makunxiang@weiandata.com", role = c("aut", "cre")),
+    person("WEIAN DATA TECH (Beijing) Co., Ltd.", role = c("cph", "fnd"),
+           email = "contact@weiandata.com"))
 Author: Kunxiang Ma [aut, cre], WEIAN DATA TECH (Beijing) Co., Ltd. [cph, fnd]
-Maintainer: Kunxiang Ma <mkx07080412@gmail.com>
+Maintainer: Kunxiang Ma <makunxiang@weiandata.com>
 Description: Provides a disciplined precheck, execution, and diagnostics workflow
     for survey weighting and raking with schema-agnostic dimensions and canonical
     target objects, including an auditable guided workflow and bilingual
@@ -18,7 +19,8 @@ Description: Provides a disciplined precheck, execution, and diagnostics workflo
     Calibration methods follow Deville and Saerndal (1992)
     <doi:10.1080/01621459.1992.10475217>, and entropy balancing follows
     Hainmueller (2012) <doi:10.1093/pan/mpr025>.
-License: MIT + file LICENSE
+License: GPL (>= 2)
+Copyright: See file inst/COPYRIGHTS.
 URL: https://github.com/weiandata/WFC
 BugReports: https://github.com/weiandata/WFC/issues
 Encoding: UTF-8

@@ -21,6 +21,7 @@
 ^build/.*[.]tar[.]gz$
 ^\.github$
 ^LICENSE\.md$
+^LICENSE$
 ^cran-comments\.md$
 ^bench$
 ^ZH$

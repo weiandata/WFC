@@ -2,7 +2,7 @@
 
 **A survey-weighting workflow package for multi-source national surveys**
 
-Working name: `weightflow` (verify availability on CRAN/GitHub before release; alternatives: `svycalib`, `weftr`). Version target for this document: 0.1.0. License recommendation: MIT + file LICENSE (permissive, maximizes adoption by collaborating institutions).
+Working name: `weightflow` (verify availability on CRAN/GitHub before release; alternatives: `svycalib`, `weftr`). Version target for this document: 0.1.0. The current package-wide licensing policy supersedes the original recommendation: GPL (>= 2), with dependency copyright boundaries documented in `inst/COPYRIGHTS`.
 
 ---
 

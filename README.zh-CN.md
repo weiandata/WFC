@@ -3,7 +3,7 @@
 <!-- badges: start -->
 [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License: GPL >= 2](https://img.shields.io/badge/license-GPL%20%3E%3D%202-blue.svg)](LICENSE)
 [![R >= 3.6.0](https://img.shields.io/badge/R-%3E%3D%203.6.0-blue.svg)](https://cran.r-project.org/)
 <!-- badges: end -->
 
@@ -11,7 +11,7 @@
 
 状态：活跃维护（Active）
 
-负责团队：WeianData Engineering
+负责团队：WEIAN DATA Engineering
 
 `WFC` 是一个面向工作流的 R 包，用于调查数据的加权与迭代比例拟合（raking）。
 它强调一条严谨的 **预检查 → 执行 → 诊断** 流水线，用于多来源调查校准；采用与数据结构
@@ -343,4 +343,6 @@ ladder_draft
 
 ## 许可证
 
-基于 [MIT 许可证](LICENSE.md) 发布。© 2026 惟安数据科技（北京）有限公司（WEIAN DATA TECH）。本项目版权 100% 归惟安数据科技所有。
+基于 [GNU 通用公共许可证第 2 版或后续版本](LICENSE) 发布。© 2026
+惟安数据科技（北京）有限公司（WEIAN DATA TECH (Beijing) Co., Ltd.）。依赖项版权与许可边界见
+[`inst/COPYRIGHTS`](inst/COPYRIGHTS)。

@@ -3,7 +3,7 @@
 <!-- badges: start -->
 [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License: GPL >= 2](https://img.shields.io/badge/license-GPL%20%3E%3D%202-blue.svg)](LICENSE)
 [![R >= 3.6.0](https://img.shields.io/badge/R-%3E%3D%203.6.0-blue.svg)](https://cran.r-project.org/)
 <!-- badges: end -->
 
@@ -11,7 +11,7 @@
 
 Status: Active
 
-Owner: WeianData Engineering
+Owner: WEIAN DATA Engineering
 
 `WFC` is a workflow-oriented R package for survey weighting and raking. It
 emphasizes a disciplined **precheck → execute → diagnose** loop for multi-source
@@ -492,5 +492,6 @@ request. Repository conventions for automated agents are documented in
 
 ## License
 
-Released under the [MIT License](LICENSE.md). © 2026 WEIAN DATA TECH (Beijing)
-Co., Ltd. All copyright in this project belongs to WEIAN DATA TECH.
+Released under the [GNU General Public License version 2 or later](LICENSE).
+Copyright © 2026 WEIAN DATA TECH (Beijing) Co., Ltd. Dependency copyrights and
+license boundaries are documented in [`inst/COPYRIGHTS`](inst/COPYRIGHTS).
