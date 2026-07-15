@@ -77,3 +77,42 @@ make_poststrat_fixture <- function() {
     ladder = ladder
   )
 }
+
+make_safe_workflow_fixture <- function(with_outcomes = FALSE) {
+  fixture <- make_weightflow_fixture()
+  sample <- fixture$sample
+  sample$base_weight <- 1
+  design <- wf_prepare_design(
+    sample,
+    id = "id",
+    calibration = c("province", "gender", "age"),
+    base_weight = "base_weight"
+  )
+  target <- wf_target_population(
+    fixture$pop,
+    key_map = c(gender = "gender", age = "age"),
+    count = "count",
+    dims = fixture$dims,
+    by = "province",
+    by_key = "province",
+    keep_joint = TRUE
+  )
+  target <- .wf_verified_target(
+    target,
+    evidence = list(demo_only = FALSE, data_checksum = strrep("c", 64)),
+    source_type = "population"
+  )
+  analysis <- data.frame(
+    id = sample$id,
+    score = seq_len(nrow(sample)),
+    approved = rep(c(0, 1), length.out = nrow(sample)),
+    stringsAsFactors = FALSE
+  )
+
+  list(
+    design = design,
+    target = target,
+    dims = fixture$dims,
+    analysis = if (with_outcomes) analysis else NULL
+  )
+}
