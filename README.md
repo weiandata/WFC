@@ -84,6 +84,128 @@ weights <- wf_rake(wfc_example$sample, target, id = "id")
 wf_diagnose(weights, target = target)
 ```
 
+<!-- SAFE_WORKFLOW_START -->
+## Verified, outcome-blind workflow (WFC 1.1)
+
+Use this workflow when weights may affect research findings. Planning receives
+only identifiers, sampling-design fields, and declared calibration variables.
+Study outcomes stay in a separate table until the weights are locked. Targets
+must come from an external CSV or Excel file plus its own `.source.dcf` evidence
+record; the recorded SHA-256 must match the data file.
+
+The package contains matching synthetic import examples:
+
+- `safe-target-example.csv` with `safe-target-example.csv.source.dcf`
+- `safe-target-example.xlsx` with `safe-target-example.xlsx.source.dcf`
+
+They are marked `demo_only: true`, so examples require `production = FALSE` and
+cannot be mistaken for authoritative production targets.
+
+```r
+library(WFC)
+
+dims_safe <- wf_dims(
+  sex = c("F", "M"),
+  age = c("18-34", "35+")
+)
+design_frame <- data.frame(
+  id = sprintf("r%02d", 1:16),
+  sex = rep(c("F", "M"), 8),
+  age = rep(c("18-34", "18-34", "35+", "35+"), 4),
+  base_weight = 1
+)
+analysis_frame <- data.frame(
+  id = design_frame$id,
+  satisfaction = seq(40, 70, length.out = 16)
+)
+
+# 1. Prepare design-only data. Any undeclared column blocks here.
+design <- wf_prepare_design(
+  design_frame,
+  id = "id",
+  calibration = c("sex", "age"),
+  base_weight = "base_weight"
+)
+
+# 2. Import the target and its companion evidence record.
+target_file <- system.file(
+  "extdata", "safe-target-example.csv", package = "WFC"
+)
+source_file <- paste0(target_file, ".source.dcf")
+target_verified <- wf_import_target(
+  target_file,
+  source_file,
+  dims_safe,
+  key_map = c(sex = "sex", age = "age"),
+  count = "count",
+  production = FALSE
+)
+
+# The Excel form is identical apart from its file-specific checksum.
+xlsx_file <- system.file(
+  "extdata", "safe-target-example.xlsx", package = "WFC"
+)
+if (requireNamespace("openxlsx", quietly = TRUE)) {
+  target_from_excel <- wf_import_target(
+    xlsx_file,
+    paste0(xlsx_file, ".source.dcf"),
+    dims_safe,
+    key_map = c(sex = "sex", age = "age"),
+    count = "count",
+    production = FALSE
+  )
+}
+
+# 3. Plan cells and weights. No weights are computed in either call.
+# Replace the bundled demo paths with a completed authoritative source first;
+# demo_only targets are intentionally refused by planning.
+cell_plan <- wf_plan_cells(design, target_verified, dims_safe)
+plan <- wf_plan_weights(
+  design,
+  target_verified,
+  dims_safe,
+  method = "raking",
+  cell_plan = cell_plan
+)
+plan$precheck
+
+# 4. A human reviewer performs approval as a separate action.
+approval <- wf_approve_plan(plan, "Reviewer name", "statistician")
+
+# 5. Execute exactly the approved plan and lock its weights.
+locked <- wf_execute_plan(plan, approval, design, target_verified)
+
+# 6. Attach by exact ID, then assess outcomes without recalculating weights.
+analysis_ready <- wf_attach_weights(analysis_frame, locked, id = "id")
+impact <- wf_assess_impact(
+  locked,
+  analysis_frame,
+  id = "id",
+  outcomes = "satisfaction"
+)
+
+# 7. Use a compact decision view or the complete statistician view.
+wf_report(locked, audience = "decision")
+wf_report(impact, audience = "statistician")
+wf_audit_export(impact, tempfile(fileext = ".json"))
+```
+
+For a shorter practitioner entry point, `wf_guided_plan()` composes preparation,
+verified import, cell planning, and weight planning, but still stops before
+approval and execution. It does not inspect outcomes.
+
+The bundled files demonstrate import layout only. The planning and execution
+lines become runnable after `target_file` and `source_file` point to a completed,
+authoritative external source imported with the default `production = TRUE`.
+
+AI Agents should use the stable condition payload in `wf_error_safety`, including
+`code`, `severity`, `field`, `evidence`, and `next_actions`. Agent operation is
+non-interactive: report the payload and request the stated human action. An Agent
+must not self-approve; `wf_approve_plan(plan, "Agent", "assistant", actor_type = "agent")`
+is refused. There are no force, bypass, ignore-source, auto-approve, auto-relax,
+auto-widen, or silent method-switch flags.
+<!-- SAFE_WORKFLOW_END -->
+
 ## Guided workflow and localized output
 
 WFC includes a one-call path over the same public constructors, precheck,

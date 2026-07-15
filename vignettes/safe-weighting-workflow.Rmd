@@ -1,0 +1,254 @@
+---
+title: "Verified, outcome-blind weighting in WFC 1.1"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Verified, outcome-blind weighting in WFC 1.1}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", message = FALSE)
+```
+
+<!-- SAFE_WORKFLOW_START -->
+
+This workflow keeps study outcomes out of target selection, cell merging, and
+weight planning. It has two entry styles:
+
+- practitioners can use `wf_guided_plan()` to compose the safe planning steps;
+- statisticians and AI Agents can call each lower-level step and inspect every
+  intermediate object.
+
+Both styles stop before approval. A separate human attestation is required to
+execute a plan. Decision makers can receive a compact report, while
+statisticians can receive the complete evidence tables.
+
+## Start with design-only and analysis data
+
+The design table contains only fields with declared sampling or calibration
+roles. Outcomes remain in a separate table joined later by a unique ID.
+
+```{r}
+library(WFC)
+
+dims_safe <- wf_dims(
+  sex = c("F", "M"),
+  age = c("18-34", "35+")
+)
+design_frame <- data.frame(
+  id = sprintf("r%02d", 1:16),
+  sex = rep(c("F", "M"), 8),
+  age = rep(c("18-34", "18-34", "35+", "35+"), 4),
+  base_weight = 1,
+  stringsAsFactors = FALSE
+)
+analysis_frame <- data.frame(
+  id = design_frame$id,
+  satisfaction = seq(40, 70, length.out = 16),
+  approved = rep(c(0, 1), 8),
+  stringsAsFactors = FALSE
+)
+
+design <- wf_prepare_design(
+  design_frame,
+  id = "id",
+  calibration = c("sex", "age"),
+  base_weight = "base_weight"
+)
+design
+```
+
+If `analysis_frame` or either outcome column were passed to
+`wf_prepare_design()`, construction would stop with `wf_error_safety` because
+the outcome column has no permitted design role.
+
+## Import a target with its own evidence record
+
+WFC installs matching synthetic CSV and Excel examples:
+
+- `safe-target-example.csv` and `safe-target-example.csv.source.dcf`;
+- `safe-target-example.xlsx` and `safe-target-example.xlsx.source.dcf`.
+
+Each data file has a distinct SHA-256, even though the tables have identical
+content. The DCF record names the publisher, dataset, citation, reference
+period, population scope, retrieval date, license, transformation, selection
+timing, and demo status.
+
+```{r}
+csv_file <- system.file(
+  "extdata", "safe-target-example.csv", package = "WFC"
+)
+csv_source <- paste0(csv_file, ".source.dcf")
+cat(paste(readLines(csv_source, warn = FALSE), collapse = "\n"))
+
+target_verified <- wf_import_target(
+  csv_file,
+  csv_source,
+  dims_safe,
+  key_map = c(sex = "sex", age = "age"),
+  count = "count",
+  production = FALSE
+)
+target_verified$identity
+```
+
+`production = FALSE` is required only because the bundled file is explicitly a
+demo. Do not use that setting to import an authoritative production source that
+has incomplete evidence.
+
+Excel uses the same import form and its own companion evidence file:
+
+```{r}
+xlsx_file <- system.file(
+  "extdata", "safe-target-example.xlsx", package = "WFC"
+)
+if (requireNamespace("openxlsx", quietly = TRUE)) {
+  target_from_excel <- wf_import_target(
+    xlsx_file,
+    paste0(xlsx_file, ".source.dcf"),
+    dims_safe,
+    key_map = c(sex = "sex", age = "age"),
+    count = "count",
+    production = FALSE
+  )
+  identical(target_verified$groups, target_from_excel$groups)
+}
+```
+
+Use `wf_target_template()` to create a blank data file and companion DCF for a
+new source. Blank metadata and `selected_before_outcomes: false` deliberately
+block import until an accountable person completes the evidence record and
+updates the checksum.
+
+## Plan without calculating weights
+
+The bundled example stops here by design: a `demo_only` target can demonstrate
+import and checksum verification but cannot enter planning. The remaining code
+is a runnable template after `csv_file` and `csv_source` are replaced with a
+completed, authoritative external source and `wf_import_target()` is called
+with its default `production = TRUE`. It is not evaluated during vignette build
+because no synthetic file may impersonate that authority.
+
+Cell planning uses only sample support, base weights, declared category order or
+an explicit ladder, and the verified target. It cannot receive outcomes or a
+custom score. It never crosses the target boundary or widens limits.
+
+```{r controlled-plan, eval=FALSE}
+cell_plan <- wf_plan_cells(
+  design,
+  target_verified,
+  dims_safe,
+  min_cell = 5,
+  max_weight_ratio = 4
+)
+plan <- wf_plan_weights(
+  design,
+  target_verified,
+  dims_safe,
+  method = "raking",
+  bounds = c(0.3, 3),
+  min_cell = 5,
+  cell_plan = cell_plan
+)
+
+plan$precheck
+is.null(plan$weights)
+```
+
+The practitioner composition produces the same kind of reviewable plan and
+still computes no weights:
+
+```{r guided-plan, eval=FALSE}
+guided <- wf_guided_plan(
+  design_frame,
+  id = "id",
+  calibration = c("sex", "age"),
+  dims = dims_safe,
+  target_file = csv_file,
+  source_file = csv_source,
+  source_type = "population",
+  key_map = c(sex = "sex", age = "age"),
+  count = "count",
+  base_weight = "base_weight",
+  production = FALSE
+)
+
+wf_report(guided, audience = "decision")$table
+names(wf_report(guided, audience = "statistician")$sections)
+```
+
+## Keep approval separate from execution
+
+The next lines are intentionally not run while building this vignette. They
+represent two accountable actions: a human reviewer attests approval, then the
+approved plan is executed exactly once. Replace the illustrative identity with
+the actual reviewer; an automated process must not fill it in.
+
+```{r approval-and-execution, eval=FALSE}
+approval <- wf_approve_plan(
+  plan,
+  approver = "Reviewer name",
+  role = "statistician"
+)
+locked <- wf_execute_plan(
+  plan,
+  approval,
+  design,
+  target_verified
+)
+```
+
+An AI Agent can prepare and inspect the plan but cannot attest its own approval:
+
+```{r agent-refusal, eval=FALSE}
+agent_refusal <- tryCatch(
+  wf_approve_plan(
+    plan,
+    approver = "Agent",
+    role = "assistant",
+    actor_type = "agent"
+  ),
+  wf_error_safety = function(condition) condition$data
+)
+agent_refusal[c("code", "severity", "next_actions")]
+```
+
+There are no force, bypass, ignore-source, auto-approve, auto-relax,
+auto-widen, or silent method-switch flags.
+
+## Attach outcomes only after locking
+
+After execution, attach the immutable weight by exact ID. Impact assessment
+computes fixed descriptive means or proportions and never calls planning or
+calibration code.
+
+```{r post-lock, eval=FALSE}
+analysis_ready <- wf_attach_weights(
+  analysis_frame,
+  locked,
+  id = "id",
+  weight_name = ".weight"
+)
+impact <- wf_assess_impact(
+  locked,
+  analysis_frame,
+  id = "id",
+  outcomes = c("satisfaction", "approved")
+)
+
+wf_report(locked, audience = "decision")
+wf_report(impact, audience = "statistician")
+wf_audit_export(impact, "impact-audit.json")
+```
+
+## Agent contract
+
+Non-interactive callers should catch `wf_error_safety` and read its stable
+payload fields: `code`, `severity`, `field`, `evidence`, and `next_actions`.
+They should report the condition, preserve the identities already produced, and
+request the listed human action. They must not edit object fields, manufacture
+an approval, retry with wider limits, or select a new target after seeing study
+outcomes.
+
+<!-- SAFE_WORKFLOW_END -->
