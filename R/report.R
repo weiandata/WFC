@@ -172,9 +172,6 @@
   if (is.data.frame(w$relaxation)) {
     sections$soft_relaxation <- w$relaxation
   }
-  if (is.data.frame(w$moments)) {
-    sections$entropy_moments <- w$moments
-  }
   if (!is.null(w$provenance$stages)) {
     stage_rows <- lapply(seq_along(w$provenance$stages), function(i) {
       stage <- w$provenance$stages[[i]]

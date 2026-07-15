@@ -18,8 +18,7 @@ wf_calibrate(sample, target, method = "raking", ...)
 \item{...}{Method-specific arguments. For \code{"greg"} / \code{"logit"}: \code{bounds},
 \code{init_weight}, \code{na}, \code{id}, \code{tol}, \code{max_iter}, \code{precheck}. For \code{"soft"}:
 \code{tolerance}, \code{init_weight}, \code{na}, \code{id}, \code{max_outer}, \code{precheck}. For
-\code{"ebal"}: \code{moments}, \code{init_weight}, \code{na}, \code{id}, \code{tol}, \code{max_iter},
-\code{precheck}.}
+\code{"ebal"}: \code{init_weight}, \code{na}, \code{id}, \code{tol}, \code{max_iter}, and \code{precheck}.}
 }
 \value{
 A \code{wf_weights} object.

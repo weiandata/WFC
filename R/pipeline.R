@@ -142,7 +142,7 @@
       common, "tolerance", "init_weight", "na", "max_outer", "precheck"
     ),
     ebal = c(
-      common, "moments", "init_weight", "na", "tol", "max_iter",
+      common, "init_weight", "na", "tol", "max_iter",
       "precheck"
     )
   )
@@ -208,6 +208,17 @@
         "wf_error_schema"
       )
     }
+  }
+  if ("moments" %in% names(stages$calibrate)) {
+    .wf_safety_abort(
+      "inline_moments_unsupported",
+      paste(
+        "WFC 2.0 does not accept inline target moments.",
+        "Use verified external margins."
+      ),
+      "moments",
+      next_actions = "import_verified_external_margins"
+    )
   }
 
   method <- stages$calibrate$method

@@ -11,8 +11,7 @@
 #' @param ... Method-specific arguments. For `"greg"` / `"logit"`: `bounds`,
 #'   `init_weight`, `na`, `id`, `tol`, `max_iter`, `precheck`. For `"soft"`:
 #'   `tolerance`, `init_weight`, `na`, `id`, `max_outer`, `precheck`. For
-#'   `"ebal"`: `moments`, `init_weight`, `na`, `id`, `tol`, `max_iter`,
-#'   `precheck`.
+#'   `"ebal"`: `init_weight`, `na`, `id`, `tol`, `max_iter`, and `precheck`.
 #'
 #' @return A `wf_weights` object.
 #' @export
@@ -31,15 +30,15 @@ wf_calibrate <- function(sample, target, method = "raking", ...) {
     )
   }
   dots <- list(...)
-  if (identical(method, "ebal") && !is.null(dots$moments)) {
-    .wf_warn_deprecated(
+  if ("moments" %in% names(dots)) {
+    .wf_safety_abort(
+      "inline_moments_unsupported",
       paste(
-        "Inline moment targets are deprecated because outcome-informed",
-        "moments can steer weights; use verified external targets instead."
+        "WFC 2.0 does not accept inline target moments.",
+        "Use verified external margins."
       ),
-      feature = "wf_calibrate(..., moments =)",
-      replacement = "wf_import_target() or wf_import_reference()",
-      risk_code = "subjective_inline_moment_target"
+      "moments",
+      next_actions = "import_verified_external_margins"
     )
   }
 
@@ -67,13 +66,6 @@ wf_calibrate <- function(sample, target, method = "raking", ...) {
       )
     }
   }
-  if (method != "ebal" && !is.null(dots$moments)) {
-    wf_abort(
-      "`moments` is only supported for method = 'ebal'.",
-      "wf_error_input"
-    )
-  }
-
   distance <- switch(method, greg = "linear", logit = "logit", ebal = "entropy")
   .wf_lincalibrate(sample, target, distance = distance, method = method, ...)
 }

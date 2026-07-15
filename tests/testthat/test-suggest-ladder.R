@@ -17,28 +17,24 @@ make_ladder_draft_fixture <- function() {
     age = c("young", "middle", "old"),
     education = c("low", "high")
   )
-  margins <- do.call(rbind, lapply(c("A", "B"), function(g) {
-    rbind(
-      data.frame(
-        region = g,
-        dimension = "age",
-        category = c("young", "middle", "old"),
-        value = c(30, 45, 45)
-      ),
-      data.frame(
-        region = g,
-        dimension = "education",
-        category = c("low", "high"),
-        value = c(30, 90)
-      )
-    )
-  }))
-  target <- suppressWarnings(wf_target_manual(
-    margins,
-    dims,
+  population <- expand.grid(
+    region = c("A", "B"),
+    age = c("young", "middle", "old"),
+    education = c("low", "high"),
+    stringsAsFactors = FALSE
+  )
+  age_count <- c(young = 30, middle = 45, old = 45)
+  education_count <- c(low = 30, high = 90)
+  population$count <- age_count[population$age] *
+    education_count[population$education] / 120
+  target <- wf_target_population(
+    population,
+    key_map = c(age = "age", education = "education"),
+    count = "count",
+    dims = dims,
     by = "region",
-    group_col = "region"
-  ))
+    by_key = "region"
+  )
   list(sample = sample, dims = dims, target = target)
 }
 

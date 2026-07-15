@@ -1,12 +1,16 @@
 make_soft_fixture <- function() {
   dims <- wf_dims(segment = c("covered", "missing"))
-  margins <- data.frame(
-    dimension = c("segment", "segment"),
-    category = c("covered", "missing"),
-    value = c(90, 10),
+  population <- data.frame(
+    segment = c("covered", "missing"),
+    count = c(90, 10),
     stringsAsFactors = FALSE
   )
-  target <- suppressWarnings(wf_target_manual(margins, dims))
+  target <- wf_target_population(
+    population,
+    key_map = c(segment = "segment"),
+    count = "count",
+    dims = dims
+  )
   sample <- data.frame(
     id = paste0("s", 1:4),
     segment = "covered",
@@ -17,13 +21,17 @@ make_soft_fixture <- function() {
 
 make_ebal_fixture <- function() {
   dims <- wf_dims(gender = c("female", "male"))
-  margins <- data.frame(
-    dimension = c("gender", "gender"),
-    category = c("female", "male"),
-    value = c(2, 2),
+  population <- data.frame(
+    gender = c("female", "male"),
+    count = c(2, 2),
     stringsAsFactors = FALSE
   )
-  target <- suppressWarnings(wf_target_manual(margins, dims))
+  target <- wf_target_population(
+    population,
+    key_map = c(gender = "gender"),
+    count = "count",
+    dims = dims
+  )
   sample <- data.frame(
     id = paste0("e", 1:4),
     gender = c("female", "female", "male", "male"),
@@ -96,72 +104,36 @@ test_that("soft calibration still blocks non-relaxable precheck errors", {
   )
 })
 
-test_that("entropy balancing hits categorical margins and continuous moments", {
+test_that("entropy balancing hits verified categorical margins", {
   fixture <- make_ebal_fixture()
 
-  ebal <- suppressWarnings(wf_calibrate(
+  ebal <- wf_calibrate(
     fixture$sample,
     fixture$target,
     method = "ebal",
     id = "id",
-    moments = c(x = 0.75),
     tol = 1e-10
-  ))
+  )
 
   expect_s3_class(ebal, "wf_weights")
   expect_identical(ebal$provenance$method, "ebal")
   expect_identical(ebal$provenance$distance, "entropy")
   expect_equal(sum(ebal$data$weight), 4, tolerance = 1e-8)
   expect_equal(ebal$achieved[["_all_"]]$gender[["male"]], 2, tolerance = 1e-8)
-  expect_equal(
-    sum(ebal$data$weight * fixture$sample$x) / sum(ebal$data$weight),
-    0.75,
-    tolerance = 1e-8
-  )
-  expect_equal(ebal$moments$achieved_mean, 0.75, tolerance = 1e-8)
   expect_true(is.finite(ebal$log$kl_divergence))
-  expect_true("entropy_moments" %in% names(wf_report(ebal)$sections))
   expect_output(print(ebal), "entropy balancing", fixed = TRUE)
 })
 
-test_that("entropy balancing validates moment declarations", {
-  fixture <- make_ebal_fixture()
-
-  expect_error(
-    suppressWarnings(wf_calibrate(
-      fixture$sample,
-      fixture$target,
-      method = "ebal",
-      id = "id",
-      moments = c(missing = 1)
-    )),
-    class = "wf_error_schema"
-  )
-
-  bad <- fixture$sample
-  bad$z <- c("a", "b", "a", "b")
-  expect_error(
-    suppressWarnings(wf_calibrate(
-      bad,
-      fixture$target,
-      method = "ebal",
-      id = "id",
-      moments = c(z = 1)
-    )),
-    class = "wf_error_schema"
-  )
-})
-
-test_that("pipeline calibration stage accepts 0.14 methods", {
+test_that("pipeline calibration stage accepts categorical entropy balancing", {
   fixture <- make_ebal_fixture()
   spec <- wf_pipeline(
     target = fixture$target,
     stages = list(
-      calibrate = list(method = "ebal", id = "id", moments = c(x = 0.75))
+      calibrate = list(method = "ebal", id = "id")
     )
   )
 
-  out <- suppressWarnings(wf_run(spec, fixture$sample))
+  out <- wf_run(spec, fixture$sample)
 
   expect_s3_class(out, "wf_weights")
   expect_identical(out$provenance$method, "ebal")

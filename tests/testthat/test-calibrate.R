@@ -46,8 +46,8 @@ test_that("wf_calibrate rejects unknown methods", {
 })
 
 test_that("foundation API exports are available", {
-  expect_true(is.function(wf_target_manual))
-  expect_true(is.function(wf_target_shrink))
+  expect_false("wf_target_manual" %in% getNamespaceExports("WFC"))
+  expect_false("wf_target_shrink" %in% getNamespaceExports("WFC"))
   expect_true(is.function(wf_suggest_collapse))
   expect_true(is.function(wf_calibrate))
 })
