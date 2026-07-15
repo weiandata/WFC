@@ -140,3 +140,9 @@ make_safe_population_files <- function(population) {
   writeLines(sprintf("%s: %s", names(source), source), source_file)
   list(data_file = data_file, source_file = source_file)
 }
+
+make_locked_safe_weights <- function(fixture = make_safe_workflow_fixture()) {
+  plan <- wf_plan_weights(fixture$design, fixture$target, fixture$dims)
+  approval <- wf_approve_plan(plan, "Test reviewer", "statistician")
+  wf_execute_plan(plan, approval, fixture$design, fixture$target)
+}
