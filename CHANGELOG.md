@@ -11,8 +11,22 @@ This file tracks repository-level milestones.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-07-15
+
+### Added
+
+- Add verified external target/reference import, outcome-blind planning, explicit
+  human approval, locked-weight execution, post-lock impact assessment, dual
+  report audiences, and v2 audit evidence.
+- Add CSV and Excel import samples, a safe-workflow vignette, and controlled
+  simulation/reference validation.
+
 ### Changed
 
+- Deprecate subjective target and runtime-margin controls ahead of their removal
+  in WFC 2.0.0.
+- Require CI to run the safe-workflow validation against the suggested `survey`
+  reference implementation.
 - Standardize the maintainer and company contact identities.
 - Re-license WFC under GPL (>= 2) and document separately distributed
   dependency copyright boundaries in `inst/COPYRIGHTS`.

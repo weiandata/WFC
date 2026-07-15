@@ -48,7 +48,7 @@ remotes::install_github("weiandata/WFC")
 Or build from a source tarball:
 
 ```r
-install.packages("WFC_1.0.0.tar.gz", repos = NULL, type = "source")
+install.packages("WFC_1.1.0.tar.gz", repos = NULL, type = "source")
 ```
 
 ## Workflow at a glance

@@ -1,5 +1,5 @@
-test_that("1.0 release metadata and API freeze document are present", {
-  expect_equal(as.character(utils::packageVersion("WFC")), "1.0.0")
+test_that("1.1 release preserves the 1.0 API freeze document", {
+  expect_equal(as.character(utils::packageVersion("WFC")), "1.1.0")
 
   freeze <- system.file("stability/api-freeze.md", package = "WFC")
   expect_true(nzchar(freeze))

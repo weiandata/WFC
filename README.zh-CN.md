@@ -44,7 +44,7 @@ remotes::install_github("weiandata/WFC")
 或从源码压缩包安装：
 
 ```r
-install.packages("WFC_1.0.0.tar.gz", repos = NULL, type = "source")
+install.packages("WFC_1.1.0.tar.gz", repos = NULL, type = "source")
 ```
 
 ## 工作流概览
