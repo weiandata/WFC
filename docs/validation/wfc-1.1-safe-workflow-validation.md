@@ -40,7 +40,7 @@ checks with the reference comparison required.
 ## Observed scenarios
 
 | Scenario | Evidence observed | Result |
-|---|---|---|
+| --- | --- | --- |
 | Supported undercoverage | Cell-plan and weight-plan identities repeated exactly; repeated weights had maximum absolute difference 0 | Pass |
 | Weight validity | Locked weights were finite and positive; range 0.72949 to 1.45898; relative-to-mean range 0.72949 to 1.45898 | Pass |
 | Conservation | Supported scenario weighted total was 40, equal to the imported target total | Pass |

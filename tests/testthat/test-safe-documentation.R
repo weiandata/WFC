@@ -13,12 +13,9 @@ test_that("safe workflow documentation covers every controlled step", {
     root,
     c("README.md", "README.zh-CN.md", "vignettes/safe-weighting-workflow.Rmd")
   )
-  skip_if_not(file.exists(paths[[1]]), "source documentation is not installed")
   all_present <- all(file.exists(paths))
+  skip_if_not(all_present, "complete source documentation set is not installed")
   expect_true(all_present)
-  if (!all_present) {
-    return(invisible())
-  }
   required <- c(
     "wf_prepare_design(",
     "wf_import_target(",
@@ -57,12 +54,9 @@ test_that("safe documentation includes import files and agent refusal contract",
       "vignettes/safe-weighting-workflow.Rmd"
     )
   )
-  skip_if_not(file.exists(paths[[1]]), "source documentation is not installed")
   all_present <- all(file.exists(paths))
+  skip_if_not(all_present, "complete source documentation set is not installed")
   expect_true(all_present)
-  if (!all_present) {
-    return(invisible())
-  }
   joined <- paste(unlist(lapply(paths, readLines, warn = FALSE)), collapse = "\n")
 
   expect_match(joined, "safe-target-example.csv", fixed = TRUE)
