@@ -207,6 +207,24 @@
   )
 }
 
+#' Calculate the identity of a verified target.
+#'
+#' @param target A verified target with evidence fields attached.
+#' @keywords internal
+#' @noRd
+.wf_verified_target_identity <- function(target) {
+  .wf_sha256_object(list(
+    mode = target$mode,
+    by = target$by,
+    dims = target$dims,
+    groups = target$groups,
+    joint = target$joint,
+    evidence = target$evidence,
+    demo_only = target$demo_only,
+    source_type = target$source_type
+  ))
+}
+
 #' Attach verified source evidence to a target.
 #'
 #' @param target A `wf_target` object.
@@ -218,16 +236,7 @@
   target$evidence <- evidence
   target$demo_only <- evidence$demo_only
   target$source_type <- source_type
-  target$identity <- .wf_sha256_object(list(
-    mode = target$mode,
-    by = target$by,
-    dims = target$dims,
-    groups = target$groups,
-    joint = target$joint,
-    evidence = target$evidence,
-    demo_only = target$demo_only,
-    source_type = target$source_type
-  ))
+  target$identity <- .wf_verified_target_identity(target)
   class(target) <- c("wf_verified_target", "wf_target")
   target
 }

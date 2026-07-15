@@ -1,3 +1,13 @@
+#' Calculate the identity of design data and declared roles.
+#'
+#' @param data Design data frame.
+#' @param roles Declared design roles.
+#' @keywords internal
+#' @noRd
+.wf_design_identity <- function(data, roles) {
+  .wf_sha256_object(list(data = data, roles = roles))
+}
+
 #' Prepare outcome-free survey design data
 #'
 #' Creates a strict design object containing only identifiers, calibration
@@ -63,7 +73,7 @@ wf_prepare_design <- function(data, id, calibration, base_weight = NULL,
     list(
       data = data,
       roles = roles,
-      identity = .wf_sha256_object(list(data = data, roles = roles)),
+      identity = .wf_design_identity(data, roles),
       created = .wf_iso_time(),
       package_version = .wf_package_version()
     ),
