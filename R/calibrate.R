@@ -30,6 +30,18 @@ wf_calibrate <- function(sample, target, method = "raking", ...) {
       list(method = method)
     )
   }
+  dots <- list(...)
+  if (identical(method, "ebal") && !is.null(dots$moments)) {
+    .wf_warn_deprecated(
+      paste(
+        "Inline moment targets are deprecated because outcome-informed",
+        "moments can steer weights; use verified external targets instead."
+      ),
+      feature = "wf_calibrate(..., moments =)",
+      replacement = "wf_import_target() or wf_import_reference()",
+      risk_code = "subjective_inline_moment_target"
+    )
+  }
 
   if (method == "raking") {
     out <- wf_rake(sample, target, ...)
@@ -45,7 +57,7 @@ wf_calibrate <- function(sample, target, method = "raking", ...) {
     return(.wf_softcalibrate(sample, target, ...))
   }
 
-  bounds <- list(...)$bounds
+  bounds <- dots$bounds
   if (method == "logit") {
     if (is.null(bounds) || length(bounds) != 2 || !is.numeric(bounds) ||
         anyNA(bounds) || !(bounds[1] > 0 && bounds[1] < 1 && bounds[2] > 1)) {
@@ -55,7 +67,7 @@ wf_calibrate <- function(sample, target, method = "raking", ...) {
       )
     }
   }
-  if (method != "ebal" && !is.null(list(...)$moments)) {
+  if (method != "ebal" && !is.null(dots$moments)) {
     wf_abort(
       "`moments` is only supported for method = 'ebal'.",
       "wf_error_input"

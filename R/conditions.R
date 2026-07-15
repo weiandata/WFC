@@ -31,12 +31,20 @@ wf_warn <- function(message, class, data = list()) {
 #' @param message Warning message.
 #' @param feature Deprecated feature name.
 #' @param replacement Suggested replacement, if any.
+#' @param removal Planned removal version.
+#' @param risk_code Stable risk identifier, if applicable.
 #' @keywords internal
 #' @noRd
-.wf_warn_deprecated <- function(message, feature = NULL, replacement = NULL) {
+.wf_warn_deprecated <- function(message, feature = NULL, replacement = NULL,
+                                removal = "2.0.0", risk_code = NULL) {
   wf_warn(
     message,
     "wf_warning_deprecated",
-    list(feature = feature, replacement = replacement)
+    list(
+      feature = feature,
+      replacement = replacement,
+      removal = removal,
+      risk_code = risk_code
+    )
   )
 }

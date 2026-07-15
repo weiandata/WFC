@@ -7,7 +7,7 @@ test_that("manual target constructs canonical margins for one group", {
     stringsAsFactors = FALSE
   )
 
-  target <- wf_target_manual(margins, dims)
+  target <- suppressWarnings(wf_target_manual(margins, dims))
 
   expect_s3_class(target, "wf_target")
   expect_equal(target$mode, "manual")
@@ -28,12 +28,12 @@ test_that("manual target constructs grouped targets with explicit totals", {
     stringsAsFactors = FALSE
   )
 
-  target <- wf_target_manual(
+  target <- suppressWarnings(wf_target_manual(
     margins,
     dims,
     by = "province",
     totals = c(A = 100, B = 100)
-  )
+  ))
 
   expect_equal(target$by, "province")
   expect_equal(names(target$groups), c("A", "B"))
@@ -50,14 +50,14 @@ test_that("manual target rejects non-additive dimensions", {
   )
 
   expect_error(
-    wf_target_manual(margins, dims),
+    suppressWarnings(wf_target_manual(margins, dims)),
     class = "wf_error_input"
   )
 })
 
 test_that("target shrinkage preserves local totals and blends shares", {
   dims <- wf_dims(gender = c("female", "male"))
-  local <- wf_target_manual(
+  local <- suppressWarnings(wf_target_manual(
     data.frame(
       province = c("A", "A"),
       dimension = "gender",
@@ -67,8 +67,8 @@ test_that("target shrinkage preserves local totals and blends shares", {
     ),
     dims,
     by = "province"
-  )
-  reference <- wf_target_manual(
+  ))
+  reference <- suppressWarnings(wf_target_manual(
     data.frame(
       dimension = c("gender", "gender"),
       category = c("female", "male"),
@@ -76,9 +76,11 @@ test_that("target shrinkage preserves local totals and blends shares", {
       stringsAsFactors = FALSE
     ),
     dims
-  )
+  ))
 
-  shrunk <- wf_target_shrink(local, reference, lambda = 0.25)
+  shrunk <- suppressWarnings(
+    wf_target_shrink(local, reference, lambda = 0.25)
+  )
 
   expect_s3_class(shrunk, "wf_target")
   expect_equal(shrunk$groups$A$total, 100)
@@ -89,7 +91,7 @@ test_that("target shrinkage preserves local totals and blends shares", {
 
 test_that("target shrinkage rejects invalid lambda and incompatible categories", {
   dims <- wf_dims(gender = c("female", "male"))
-  local <- wf_target_manual(
+  local <- suppressWarnings(wf_target_manual(
     data.frame(
       dimension = c("gender", "gender"),
       category = c("female", "male"),
@@ -97,8 +99,8 @@ test_that("target shrinkage rejects invalid lambda and incompatible categories",
       stringsAsFactors = FALSE
     ),
     dims
-  )
-  bad_ref <- wf_target_manual(
+  ))
+  bad_ref <- suppressWarnings(wf_target_manual(
     data.frame(
       dimension = c("gender", "gender"),
       category = c("female", "other"),
@@ -106,8 +108,14 @@ test_that("target shrinkage rejects invalid lambda and incompatible categories",
       stringsAsFactors = FALSE
     ),
     wf_dims(gender = c("female", "other"))
-  )
+  ))
 
-  expect_error(wf_target_shrink(local, local, lambda = 1.5), class = "wf_error_input")
-  expect_error(wf_target_shrink(local, bad_ref, lambda = 0.5), class = "wf_error_schema")
+  expect_error(
+    suppressWarnings(wf_target_shrink(local, local, lambda = 1.5)),
+    class = "wf_error_input"
+  )
+  expect_error(
+    suppressWarnings(wf_target_shrink(local, bad_ref, lambda = 0.5)),
+    class = "wf_error_schema"
+  )
 })

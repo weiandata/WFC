@@ -313,6 +313,17 @@
 #' )
 wf_pipeline <- function(target, stages, validate = NULL) {
   target <- .wf_pipeline_target_spec(target)
+  if (identical(target$mode, "manual")) {
+    .wf_warn_deprecated(
+      paste(
+        "Manual pipeline targets are deprecated because subjective margins",
+        "can steer results; use verified external target import instead."
+      ),
+      feature = "wf_pipeline(target = list(mode = 'manual'))",
+      replacement = "wf_guided_plan() with a verified target file",
+      risk_code = "subjective_manual_pipeline_target"
+    )
+  }
   stages <- .wf_pipeline_stage_spec(stages)
   validate <- .wf_pipeline_validation_spec(validate)
   hash_input <- list(target = target, stages = stages, validate = validate)
@@ -695,6 +706,17 @@ wf_run <- function(spec, sample, dims = NULL, population = NULL,
   }
   if (!is.data.frame(sample) || nrow(sample) == 0) {
     wf_abort("`sample` must be a non-empty data frame.", "wf_error_input")
+  }
+  if (!is.null(margins)) {
+    .wf_warn_deprecated(
+      paste(
+        "Runtime manual margins are deprecated because run-time target choices",
+        "can steer results; import and review a verified target first."
+      ),
+      feature = "wf_run(..., margins =)",
+      replacement = "wf_guided_plan() with a verified target file",
+      risk_code = "subjective_runtime_margins"
+    )
   }
 
   calibrate <- spec$stages$calibrate
