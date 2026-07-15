@@ -1,120 +1,48 @@
 ---
-title: "Guided workflows and localized output in WFC 0.11"
+title: "Guided verified weighting in WFC 2.0"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Guided workflows and localized output in WFC 0.11}
+  %\VignetteIndexEntry{Guided verified weighting in WFC 2.0}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>", message = FALSE)
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-`wf_autoweigh()` is a guided path over WFC's existing expert workflow. It uses
-the same target constructor, precheck, declared collapse plans, calibration
-engines, diagnostics, and reports. Its additional responsibility is to make
-each automated choice explicit and auditable.
+`wf_autoweigh()` gives survey researchers a narrated path over the verified
+engines. It no longer builds a target from raw runtime data. Prepare `design`,
+import `target`, and declare `dims` first.
 
-## Run the guided raking path
-
-The bundled data are simulated. Passing raw population data lets the guided
-workflow construct the canonical target before enforcing precheck.
-
-```{r}
-library(WFC)
-data("wfc_example", package = "WFC")
-
+```{r guided, eval=FALSE}
 guided <- wf_autoweigh(
-  sample = wfc_example$sample,
-  population = wfc_example$population,
-  dims = wfc_example$dims,
-  key_map = c(gender = "gender", age = "age"),
-  count = "count",
-  by = "province",
-  id = "id",
-  caps = c(2, 4, 8),
-  interactive = FALSE
+  design,
+  target,
+  dims,
+  method = "raking",
+  trim = NULL,
+  interactive = FALSE,
+  lang = "en"
 )
 
 guided$weights
 guided$diagnostics
+guided$ledger
 ```
 
-In non-interactive mode, only pre-declared and reproducible remediations may be
-applied. A blocking issue without an applicable map in `wf_dims()` raises a
-classed feasibility error before weights are produced.
+The ledger uses stable English programmatic keys while its `detail` text may be
+localized. Artifacts align with ledger rows so a statistician or agent can
+inspect each precheck, recommendation, and report.
 
-## Audit the decision ledger
+Automatic mode chooses only from declared safe settings. It does not inspect
+outcomes, change the target, widen bounds, or manufacture approval.
 
-The ledger is an ordered data frame. `action` and `detail_key` are stable
-English programmatic keys; `detail` is localized human-facing narration.
-`artifacts` is aligned one-for-one with ledger rows and retains objects such as
-the target, precheck, collapse plan, trim frontier, and final report.
-
-```{r}
-guided$ledger[c(
-  "step", "action", "detail_key", "artifact_class"
-)]
-
-length(guided$artifacts) == nrow(guided$ledger)
+```{r views, eval=FALSE}
+wf_report(guided$weights, audience = "decision", lang = "zh_CN")
+wf_report(guided$weights, audience = "statistician", lang = "en")
 ```
 
-Keep the result with any published estimate. It contains the final sample and
-target after declared remediation, the selected method, normalized language,
-weights, diagnostics, report, ledger, and structured artifacts.
-
-## Understand method selection
-
-`method = "auto"` chooses raking unless both a reviewed
-`wf_collapse_ladder` and a positive `min_cell` are supplied. With both inputs it
-chooses post-stratification and retains joint population cells when building a
-raw target. Automatic mode never chooses bounded logit calibration because
-weight bounds require analyst judgment.
-
-Use explicit `method = "logit"` with reviewed bounds:
-
-```{r}
-logit_result <- wf_autoweigh(
-  sample = wfc_example$sample,
-  population = guided$target,
-  dims = wfc_example$dims,
-  id = "id",
-  method = "logit",
-  bounds = c(0.3, 3),
-  trim = NULL,
-  interactive = FALSE
-)
-
-logit_result$method
-```
-
-## Localize human-facing output
-
-English and Simplified Chinese are supported. Resolution follows an explicit
-`lang` argument, then `options(wfc.lang)`, then the session locale, with English
-as the fallback. Unsupported explicit values raise `wf_error_input`.
-
-```{r}
-localized <- wf_report(
-  guided$weights,
-  guided$target,
-  audience = "manager",
-  lang = "zh_CN"
-)
-
-localized$language
-identical(names(localized$table), names(guided$report$table))
-```
-
-Localization does not translate error messages, R documentation, object or
-column names, condition classes, user data, ledger actions, or detail keys.
-This keeps automated consumers stable across languages.
-
-## Preserve review boundaries
-
-The guided path accelerates routine execution but does not replace statistical
-review. Analysts still own dimension definitions, allowed collapse maps,
-post-stratification ladders, minimum cell sizes, logit bounds, trim criteria,
-and publication decisions. Use `interactive = TRUE` when each declared collapse
-or finite trim recommendation should require confirmation before execution.
+For production, prefer `wf_plan_weights()` plus separate
+`wf_approve_plan()` and `wf_execute_plan()` so human approval is bound to one
+immutable plan.

@@ -11,6 +11,23 @@ This file tracks repository-level milestones.
 
 ## [Unreleased]
 
+### Removed
+
+- Remove subjective manual targets, target shrinkage, inline moment targets,
+  manual pipeline targets, and run-time margin injection without a compatibility
+  switch.
+- Remove all supported paths from raw samples or ordinary target objects to a
+  weighting engine.
+
+### Changed
+
+- Require unchanged design-only data, verified external target evidence,
+  deterministic planning, qualified human approval, and locked execution for
+  WFC 2.0 weighting.
+- Make the verified workflow the only path in current READMEs, articles, and
+  migration examples, with separate guidance for survey researchers and AI
+  agents and separate decision/statistical report views.
+
 ## [1.1.0] - 2026-07-15
 
 ### Added

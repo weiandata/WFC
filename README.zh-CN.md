@@ -1,464 +1,288 @@
-# WFC 中文简介
+# WFC
 
-<!-- badges: start -->
-[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
-[![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
-[![License: GPL >= 2](https://img.shields.io/badge/license-GPL%20%3E%3D%202-blue.svg)](LICENSE)
-[![R >= 3.6.0](https://img.shields.io/badge/R-%3E%3D%203.6.0-blue.svg)](https://cran.r-project.org/)
-<!-- badges: end -->
+WFC 是一个强调可复核性的 R 语言社会调查加权包。2.0 版把一条规则变成
+强制要求：只有已经声明用途的抽样设计变量，以及来源独立、证据完整并经过校验的
+目标数据，才能用于生成权重。研究结果变量只能在权重锁定以后接入。
 
-[English](README.md) | **简体中文**
+它同时服务两类使用者：
 
-状态：活跃维护（Active）
+- 社会调查人员可以按清晰步骤操作，遇到问题时看到普通人能懂的停止原因和下一步；
+- 统计团队和 AI Agent 可以读取稳定的对象、身份值、错误代码和完整审计字段。
 
-负责团队：WEIAN DATA Engineering
+同一个结果对象可以生成简短的决策者版本，也可以生成完整的统计人员版本，两个版本
+必须相互一致。
 
-`WFC` 是一个面向工作流的 R 包，用于调查数据的加权与迭代比例拟合（raking）。
-它强调一条严谨的 **预检查 → 执行 → 诊断** 流水线，用于多来源调查校准；采用与数据结构
-无关（schema-agnostic）的维度定义和规范化的目标对象，使 raking 与事后分层（post-stratification）
-两个引擎共享一致的接口契约。
+## WFC 2.0 会阻止什么
 
-> 说明：本项目的代码、测试、英文文档与配置一律使用英文；本文件是仓库中唯一的中文说明文件。
+公开加权函数不再接受原始数据框、普通目标对象、演示目标、被修改过身份的对象、
+Agent 自我批准，以及运行时临时改变 ID 或基础权重。手工目标、目标收缩、内联目标
+矩、手工流水线模式和运行时注入边际都不再受支持。
 
-## 为什么用 WFC
-
-多数加权脚本会“悄无声息”地出错：某个类别在目标中缺失、某个单元格样本太少无法估计，
-或修剪（trimming）后组内总量发生漂移。`WFC` 把这些失败模式变成一等公民、可复核的步骤。
-
-- **先预检查，再校准。** `wf_precheck()` 在计算任何权重之前，比对样本与目标并报告不兼容之处。
-- **一套目标契约，多种数据来源。** 可从外部总体数据、加权参考样本或手工边际表构建规范化的 `wf_target`。
-- **可复核的类别合并。** 事先声明合并阶梯（collapse ladder），依据预检查结果得到建议的合并方案，
-  并一致地应用到样本与目标上。
-- **raking 与事后分层共用一个调度器。** 无论使用哪种方法，`wf_calibrate()` 都返回同样的 `wf_weights` 契约。
-- **把诊断变成习惯。** `wf_diagnose()` 以权重与边际诊断为每条工作流收尾。
+这些限制能够降低误用和常见滥用风险，但不能证明外部来源一定真实，也不能阻止有人
+直接修改开源代码。因此，重要分析仍然需要有责任的人工审查。
 
 ## 安装
 
-从 GitHub 安装开发版：
+从 GitHub 安装开发版本：
 
 ```r
-# install.packages("remotes")
 remotes::install_github("weiandata/WFC")
 ```
 
-或从源码压缩包安装：
+## 安全流程需要哪些文件
 
-```r
-install.packages("WFC_1.1.0.tar.gz", repos = NULL, type = "source")
-```
+一次正式运行通常从四个文件开始：
 
-## 工作流概览
+1. 只包含 ID、校准变量和已声明抽样设计变量的调查设计表；
+2. 单独保存研究结果变量的分析表；
+3. 来自外部权威来源的 CSV 或 Excel 目标表；
+4. 与目标表配套的 `.source.dcf` 来源证据记录。
 
-```text
-声明维度 ──► 构建目标 ──► 预检查 ──► （合并类别）──► 校准 ──► 诊断
- wf_dims()   wf_target_*()  wf_precheck()  wf_suggest_    wf_rake() /   wf_diagnose()
-                                           collapse()     wf_poststrat()
-                                           wf_apply_      wf_calibrate()
-                                           collapse()
-```
-
-## 快速上手
+如果不知道目标表格式，可以先生成模板：
 
 ```r
 library(WFC)
 
-data(wfc_example)
-
-dims <- wfc_example$dims
-target <- wf_target_population(
-  pop = wfc_example$population,
-  key_map = c(gender = "gender", age = "age"),
-  count = "count",
-  dims = dims,
-  by = "province"
+dims <- wf_dims(
+  age_group = c("18-34", "35-54", "55+"),
+  region = c("north", "south")
 )
 
-precheck <- wf_precheck(wfc_example$sample, target, id = "id")
-precheck
-
-weights <- wf_rake(wfc_example$sample, target, id = "id")
-wf_diagnose(weights, target = target)
+wf_target_template(
+  "population-margins-template.csv",
+  dims = dims
+)
 ```
+
+模板会同时生成数据文件和 DCF 表单。目标数据定稿以后，需要填写来源信息并更新
+校验值，而且应在查看研究结果之前取得这些文件。
+
+WFC 自带 `safe-target-example.csv`、`safe-target-example.xlsx` 和各自独立的
+`.source.dcf` 示例。它们只用于演示格式，不能进入正式规划。
 
 <!-- SAFE_WORKFLOW_START -->
-## 经来源验证、与结果变量隔离的工作流（WFC 1.1）
 
-当权重可能影响研究结论时，请使用这条流程。规划阶段只能接触 ID、抽样设计字段和
-预先声明的校准变量；研究结果放在另一张表中，等权重锁定后才能接回。目标数据必须
-来自外部 CSV 或 Excel 文件，并为每个文件配一份独立的 `.source.dcf` 来源说明；其中
-记录的 SHA-256 必须与数据文件一致。
+## 完整的受控流程
 
-包内提供两套内容一致的合成导入样本：
-
-- `safe-target-example.csv` 与 `safe-target-example.csv.source.dcf`
-- `safe-target-example.xlsx` 与 `safe-target-example.xlsx.source.dcf`
-
-样本被明确标记为 `demo_only: true`，所以演示时必须写 `production = FALSE`，正式分析
-无法误用它们。
+### 第一步：准备不含结果变量的设计数据
 
 ```r
 library(WFC)
 
-dims_safe <- wf_dims(
-  sex = c("F", "M"),
-  age = c("18-34", "35+")
-)
-design_frame <- data.frame(
-  id = sprintf("r%02d", 1:16),
-  sex = rep(c("F", "M"), 8),
-  age = rep(c("18-34", "18-34", "35+", "35+"), 4),
-  base_weight = 1
-)
-analysis_frame <- data.frame(
-  id = design_frame$id,
-  satisfaction = seq(40, 70, length.out = 16)
+dims <- wf_dims(
+  age_group = c("18-34", "35-54", "55+"),
+  region = c("north", "south")
 )
 
-# 1. 准备只含设计信息的数据；任何未声明的列都会阻止继续。
+design_only <- read.csv("survey-design.csv")
+analysis_data <- read.csv("survey-outcomes.csv")
+
 design <- wf_prepare_design(
-  design_frame,
-  id = "id",
-  calibration = c("sex", "age"),
+  design_only,
+  id = "person_id",
+  calibration = c("age_group", "region"),
   base_weight = "base_weight"
 )
+```
 
-# 2. 同时导入目标文件和它自己的来源说明。
-target_file <- system.file(
-  "extdata", "safe-target-example.csv", package = "WFC"
+`design_only` 中的每一列都必须有明确的设计用途。满意度、支持率、得分、是否通过等
+结果变量应保留在 `analysis_data` 中。
+
+### 第二步：连同来源证据一起导入外部目标
+
+人口计数目标的导入样本：
+
+```r
+target <- wf_import_target(
+  data_file = "population-margins.csv",
+  source_file = "population-margins.csv.source.dcf",
+  dims = dims,
+  key_map = c(age_group = "age_group", region = "region"),
+  count = "population_count",
+  production = TRUE
 )
-source_file <- paste0(target_file, ".source.dcf")
-target_verified <- wf_import_target(
-  target_file,
-  source_file,
-  dims_safe,
-  key_map = c(sex = "sex", age = "age"),
-  count = "count",
-  production = FALSE
+```
+
+独立参考样本目标的导入样本：
+
+```r
+reference_target <- wf_import_reference(
+  data_file = "reference-sample.csv",
+  source_file = "reference-sample.csv.source.dcf",
+  dims = dims,
+  feature = "reference_weight",
+  production = TRUE
+)
+```
+
+导入时会检查来源字段是否完整、目标是否在查看结果之前选定、是否属于演示数据，
+以及 SHA-256 是否匹配。软件不能替代人判断该来源在统计学上是否合适。
+
+### 第三步：在不查看结果变量的情况下制定方案
+
+```r
+cell_plan <- wf_plan_cells(
+  design,
+  target,
+  dims,
+  min_cell = 5,
+  max_weight_ratio = 4
 )
 
-# Excel 导入形式相同，但必须使用 Excel 文件自己的校验码。
-xlsx_file <- system.file(
-  "extdata", "safe-target-example.xlsx", package = "WFC"
-)
-if (requireNamespace("openxlsx", quietly = TRUE)) {
-  target_from_excel <- wf_import_target(
-    xlsx_file,
-    paste0(xlsx_file, ".source.dcf"),
-    dims_safe,
-    key_map = c(sex = "sex", age = "age"),
-    count = "count",
-    production = FALSE
-  )
-}
-
-# 3. 先规划单元格和权重；这两个函数都不会计算权重。
-# 必须先把演示路径替换成来源完整的权威目标；demo_only 目标会被规划阶段拒绝。
-cell_plan <- wf_plan_cells(design, target_verified, dims_safe)
 plan <- wf_plan_weights(
   design,
-  target_verified,
-  dims_safe,
+  target,
+  dims,
   method = "raking",
+  bounds = c(0.3, 3),
+  min_cell = 5,
   cell_plan = cell_plan
 )
-plan$precheck
 
-# 4. 由人类审核者在独立步骤中批准。
-approval <- wf_approve_plan(plan, "审核者姓名", "statistician")
+plan$ready
+plan$issues
+is.null(plan$weights)
+```
 
-# 5. 严格执行已批准计划并锁定权重。
-locked <- wf_execute_plan(plan, approval, design, target_verified)
+规划阶段不会计算权重，只会记录确切输入、检查结果、方法、限制和确定性的类别合并，
+供审查者检查。
 
-# 6. 按完全一致的 ID 接回权重，再做不会重算权重的结果影响比较。
-analysis_ready <- wf_attach_weights(analysis_frame, locked, id = "id")
+### 第四步：由独立的人工审查者批准
+
+```r
+approval <- wf_approve_plan(
+  plan,
+  approver = "审查者完整姓名",
+  role = "统计学专家",
+  note = "已检查来源、样本支持、方法、限制和预期用途"
+)
+```
+
+AI Agent 可以准备方案，但不能替自己生成这份批准。姓名和职责必须对应真实的人工
+审查者。
+
+### 第五步：只执行未被修改的方案
+
+```r
+locked <- wf_execute_plan(
+  plan,
+  approval,
+  design,
+  target
+)
+```
+
+只要设计数据、目标、方案或批准中的任何一项被修改，身份链就会失效，执行会停止。
+
+### 第六步：权重锁定以后再接入结果变量
+
+```r
+analysis_ready <- wf_attach_weights(
+  analysis_data,
+  locked,
+  id = "person_id",
+  weight_name = ".weight"
+)
+
 impact <- wf_assess_impact(
   locked,
-  analysis_frame,
-  id = "id",
-  outcomes = "satisfaction"
+  analysis_data,
+  id = "person_id",
+  outcomes = c("satisfaction", "approved")
 )
-
-# 7. 决策人员看摘要，统计人员看完整明细。
-wf_report(locked, audience = "decision", lang = "zh_CN")
-wf_report(impact, audience = "statistician", lang = "zh_CN")
-wf_audit_export(impact, tempfile(fileext = ".json"))
 ```
 
-不熟悉编程的调查人员可使用 `wf_guided_plan()`，它会组合数据准备、来源验证、单元格
-规划和权重规划，但仍会停在批准与执行之前，而且不会读取结果变量。
+影响评估只能描述已锁定权重带来的变化，不能重新规划、重新批准或改写权重。
 
-包内文件只用于演示导入格式。从规划开始的代码必须把 `target_file` 和 `source_file`
-换成来源说明完整的权威外部文件，并使用默认的 `production = TRUE` 重新导入后才能运行。
+### 第七步：为不同读者生成不同层次的结果
 
-AI Agent 应读取 `wf_error_safety` 中稳定的机器字段，包括 `code`、`severity`、`field`、
-`evidence` 与 `next_actions`，然后把阻塞原因和下一步交给人类。Agent 不得自行批准：
-`wf_approve_plan(plan, "Agent", "assistant", actor_type = "agent")` 会被拒绝。接口没有
-force、bypass、ignore-source、auto-approve、auto-relax、auto-widen 或静默切换方法的参数。
+```r
+decision_view <- wf_report(
+  locked,
+  audience = "decision"
+)
+
+statistical_view <- wf_report(
+  locked,
+  audience = "statistician"
+)
+
+impact_detail <- wf_report(
+  impact,
+  audience = "statistician"
+)
+
+wf_audit_export(locked, "weighting-audit.json")
+```
+
+决策者版本重点显示当前状态、主要风险和下一步。统计人员版本提供完整表格、收敛信息、
+身份值和来源记录，便于继续分析。
+
 <!-- SAFE_WORKFLOW_END -->
 
-## 引导式工作流与双语输出
+## 统计专业人员的直接入口
 
-WFC 在同一套目标构造器、预检查、校准引擎、诊断与报告之上，提供一次调用的
-引导式入口。它不会绕过阻断性预检查：自动整改只能使用 `wf_dims()` 中事先声明的
-类别合并映射，每项决定都会以稳定的机器可读键记入账本。
+专业用户仍然可以直接调用 `wf_calibrate()`、`wf_rake()`、`wf_poststrat()`、
+`wf_auto_trim()` 或 `wf_autoweigh()`，但前两个输入仍必须是未被修改的 `design` 和
+`target`：
 
 ```r
-guided <- wf_autoweigh(
-  sample = wfc_example$sample,
-  population = wfc_example$population,
-  dims = dims,
-  key_map = c(gender = "gender", age = "age"),
-  count = "count",
-  by = "province",
-  id = "id",
-  interactive = FALSE
+raked <- wf_rake(design, target, tol = 1e-8)
+
+bounded <- wf_calibrate(
+  design,
+  target,
+  method = "logit",
+  bounds = c(0.3, 3)
 )
 
-guided$weights
-guided$ledger[c("step", "action", "detail_key", "detail")]
-```
-
-`method = "auto"` 只有在同时提供已审核的 `ladder` 与 `min_cell` 时才选择事后分层；
-否则选择 raking，且绝不会自动选择有界 logit 校准。设置 `interactive = TRUE` 可在
-应用已声明合并和有限截尾建议之前要求确认。
-
-面向人的报告、引导说明和图形标签支持英文与简体中文；对象字段、条件类、
-账本动作键与 `detail_key` 始终保持英文，便于稳定的程序处理。
-
-```r
-wf_report(guided$weights, guided$target, lang = "zh_CN")
-plot(guided$diagnostics, lang = "zh_CN")
-
-options(wfc.lang = "zh_CN")
-```
-
-## 生态互操作
-
-WFC 在严格、与行顺序无关的 ID 匹配后，将结果转换为 survey 包的标准设计对象。
-所有生态包仍然只是建议依赖：不安装 survey、srvyr 或 generics 时，WFC 核心仍可正常安装与加载。
-
-```r
-analysis <- wfc_example$sample
-analysis$outcome <- as.numeric(analysis$age == "young")
-
-survey_design <- as_svydesign(
-  guided$weights,
-  analysis,
-  id = "id"
-)
-survey::svymean(~outcome, survey_design)
-```
-
-`as_svrepdesign()` 可将 `wf_replicate_weights` 转换为标准 `svyrep.design`，保留
-bootstrap、JK1/JKn 或 BRR 的缩放设置，并重现 `wf_variance()` 的不确定性。输出是普通
-survey 对象，因此安装 srvyr 后可直接使用 `srvyr::as_survey(survey_design)` 包装。
-
-`generics` 可用时，WFC 会条件注册返回基础 `data.frame` 的 broom 风格方法：
-
-```r
-generics::tidy(guided$weights)
-generics::glance(guided$diagnostics)
-augmented <- generics::augment(
-  guided$weights,
-  data = analysis,
-  id = "id"
+trim_review <- wf_auto_trim(
+  design,
+  target,
+  caps = c(2, 4, 6, 8)
 )
 ```
 
-所有桥接与回填方法都要求单元 ID 唯一且集合完全一致，不会静默丢弃未匹配行。
+ID 和基础权重列由 `wf_prepare_design()` 统一声明，后续不能临时覆盖。
 
-## 事后分层（Post-stratification）
+## AI Agent 接入方式
 
-事后分层使用联合总体单元格，而非边际总量。构建目标时设置 `keep_joint = TRUE`，
-声明一个可复核的合并阶梯，然后规划并执行单元格级校准。
+Agent 应保存完整 WFC 对象及其身份值。可交接给人工审查者的最小对象示例如下：
 
 ```r
-target_joint <- wf_target_population(
-  pop = wfc_example$population,
-  key_map = c(gender = "gender", age = "age"),
-  count = "count",
-  dims = dims,
-  by = "province",
-  keep_joint = TRUE
+handoff <- list(
+  plan = plan,
+  plan_identity = plan$identity,
+  design_identity = design$identity,
+  target_identity = target$identity,
+  required_human_action = "审查并批准未被修改的方案"
 )
-
-ladder <- wf_collapse_ladder(
-  dims,
-  level1 = list(age = c(young = "all", old = "all"))
-)
-
-plan <- wf_plan_poststrat(
-  wfc_example$sample,
-  target_joint,
-  min_cell = 2,
-  ladder = ladder
-)
-plan
-
-post <- wf_poststrat(
-  wfc_example$sample,
-  target_joint,
-  min_cell = 2,
-  ladder = ladder,
-  id = "id"
-)
-wf_diagnose(post)
 ```
 
-## 基础 API（Foundation API）
-
-手工边际表可直接转换为目标，并通过统一调度器进行校准。也可以在校准前把目标向参考目标收缩。
+如果 Agent 尝试自我批准，WFC 会返回 `wf_error_safety`。Agent 应读取稳定字段并停止：
 
 ```r
-manual <- data.frame(
-  dimension = c("gender", "gender", "age", "age"),
-  category = c("female", "male", "young", "old"),
-  value = c(55, 45, 60, 40)
-)
-
-target_manual <- wf_target_manual(manual, dims)
-weights_manual <- wf_calibrate(
-  wfc_example$sample,
-  target_manual,
-  method = "raking",
-  id = "id"
-)
-wf_diagnose(weights_manual)
-```
-
-## 生产化与性能
-
-重复性生产轮次可用 `wf_pipeline()` 声明，用 `wf_run()` 执行，并通过
-`wf_validate()` 与参考版本比较权重漂移。`wf_audit_export()` 可导出包含来源、
-输入哈希与元数据的 JSON 审计记录。
-
-```r
-spec <- wf_pipeline(
-  target = list(
-    mode = "population",
-    key_map = c(gender = "gender", age = "age"),
-    count = "count",
-    by = "province"
+refusal <- tryCatch(
+  wf_approve_plan(
+    plan,
+    approver = "Automated agent",
+    role = "assistant",
+    actor_type = "agent"
   ),
-  stages = list(calibrate = list(method = "raking", id = "id")),
-  validate = list(max_deff = 6, max_margin_dev = 0.01)
+  wf_error_safety = function(condition) condition$data
 )
 
-round1 <- wf_run(spec, wfc_example$sample, dims = dims,
-                 population = wfc_example$population)
-wf_validate(round1, weights, target = target)
+refusal[c("code", "severity", "field", "next_actions")]
 ```
 
-较长的分组校准和重复权重 refit 支持可选 fork 并行和 `cli` 进度条：
+Agent 不得修改身份值、伪造人工姓名、放宽限制、更换目标，或在看到结果以后重新尝试。
 
-```r
-weights_parallel <- wf_rake(
-  wfc_example$sample,
-  target,
-  id = "id",
-  parallel = TRUE,
-  progress = TRUE
-)
-```
+## 从 WFC 1.x 迁移
 
-## 易用性基础（0.10）
-
-0.10 在现有统计引擎之上增加审核与沟通工具。`wf_auto_trim()` 只推荐、不会自动应用
-截尾上限；`wf_suggest_ladder()` 生成供人工复核的合并阶梯草案；`wf_report()` 可生成
-面向管理者或分析人员的结构化质量报告。
-
-```r
-trim_advice <- wf_auto_trim(
-  wfc_example$sample,
-  target,
-  id = "id",
-  caps = c(2, 4, 8)
-)
-plot(trim_advice)
-
-report <- wf_report(weights, target, audience = "manager")
-report
-
-ladder_draft <- wf_suggest_ladder(
-  wfc_example$sample,
-  target,
-  dims,
-  min_cell = 25
-)
-ladder_draft
-```
-
-`wf_weights`、`wf_diagnostics`、融合结果和倾向权重结果也都提供了 base R `plot()` 方法。
-
-## 函数速查
-
-| 阶段 | 函数 | 用途 |
-| --- | --- | --- |
-| 引导 | `wf_autoweigh()` | 运行目标构建、预检查、已声明整改、校准、诊断、报告和决定记录。 |
-| 桥接 | `as_svydesign()` | 按严格 ID 将校准权重转换为标准 survey 设计。 |
-| 桥接 | `as_svrepdesign()` | 将 WFC 重复权重转换为不确定性等价的 survey 重复设计。 |
-| 整理 | `generics::tidy()` / `glance()` / `augment()` | 将 WFC 结果投影为稳定基础表，或按 ID 回填分析数据。 |
-| 维度 | `wf_dims()` | 声明校准维度及可选的合并阶梯。 |
-| 目标 | `wf_target_population()` | 从外部总体数据构建规范化目标。 |
-| 目标 | `wf_target_reference()` | 从加权参考样本构建目标。 |
-| 目标 | `wf_target_manual()` | 从手工长格式边际表构建目标。 |
-| 目标 | `wf_target_shrink()` | 将目标向参考目标收缩。 |
-| 预检查 | `wf_precheck()` | 校准前检查样本与目标的兼容性。 |
-| 合并 | `wf_collapse_ladder()` | 声明事后分层的合并阶梯。 |
-| 合并 | `wf_suggest_collapse()` | 依据预检查结果给出合并建议。 |
-| 合并 | `wf_suggest_ladder()` | 根据稀疏支持度生成可复核的事后分层阶梯草案。 |
-| 合并 | `wf_apply_collapse()` | 将合并方案应用到样本与目标。 |
-| 校准 | `wf_calibrate()` | 调度到具体校准方法（raking、事后分层、greg、logit、soft、ebal）。 |
-| 校准 | `wf_rake()` | 分组 raking（迭代比例拟合）。 |
-| 校准 | `wf_plan_poststrat()` | 规划事后分层的单元格解析。 |
-| 校准 | `wf_poststrat()` | 执行单元格级事后分层。 |
-| 生产 | `wf_pipeline()` | 声明可序列化的加权轮次。 |
-| 生产 | `wf_run()` | 执行声明式流水线。 |
-| 生产 | `wf_validate()` | 与参考版本比较权重漂移。 |
-| 生产 | `wf_audit_export()` | 写出 JSON 审计记录。 |
-| 组合 | `wf_compose()` | 将多个加权阶段相乘为一个可审计结果。 |
-| 融合 | `wf_blend()` | 在估计量层面融合线上与线下两个来源。 |
-| 倾向 | `wf_target_propensity()` | 将线上样本与概率参考样本堆叠为成员模型规格。 |
-| 倾向 | `wf_propensity()` | 产出逆倾向伪设计权重，附重叠与平衡诊断。 |
-| 流失 | `wf_attrition()` | 为面板未留存估计逆留存权重。 |
-| 影响 | `wf_influence()` | 排序高影响样本单元，辅助截尾和审核。 |
-| 方差 | `wf_replicates()` | 生成重新校准的 bootstrap/jackknife/BRR 重复权重。 |
-| 方差 | `wf_variance()` | 将重复权重与估计量组合为估计值、标准误与置信区间。 |
-| 建议 | `wf_auto_trim()` | 根据偏差—方差前沿推荐截尾上限。 |
-| 诊断 | `wf_diagnose()` | 诊断校准后的权重与边际。 |
-| 报告 | `wf_report()` | 生成管理者/分析者质量报告对象、Markdown 或 HTML。 |
-| 可视化 | `plot()` | 绘制权重、诊断、截尾前沿、融合敏感性或倾向质量。 |
-
-所有导出函数均带有完整文档。在 R 中可用 `?wf_rake`、`help(package = "WFC")`
-或 `example(wf_target_population)` 查看。
-
-## 数据政策
-
-`private-data/` 下的私有源电子表格和 RData 文件**不会提交**到仓库，也**不会**随 R 包发布。
-所有示例与测试仅使用由 `data-raw/make-wfc-example.R` 生成的模拟数据集 `wfc_example`。
-
-## 项目状态
-
-1.0.0 冻结了 WFC 核心的公开 API。稳定范围包括 raking、事后分层、手工目标与目标收缩、
-合并规划、权重组合、双源融合、倾向得分与面板流失校正、重复权重方差、有界校准、
-软校准、熵平衡、生产流水线、漂移验证、审计导出、质量报告、截尾建议、阶梯草案、
-诊断图、survey/srvyr 桥接、broom 风格投影、双语人机输出以及可选并行执行。
-因 CRAN 上存在同名包，本包已于 0.9.0 从 `weightflow` 更名为 `WFC`。完整变更见
-[`NEWS.md`](NEWS.md)。
-
-设计文档位于 [`inst/design/`](inst/design/)（英文），其中
-[`wfc_future_design.md`](inst/design/wfc_future_design.md) 为 0.10 → 1.0 的未来路线
-（引导式工作流、生态桥接、生产基础设施、软校准等），对应的参考原型实现位于
-[`inst/reference/`](inst/reference/)。
-
-## 参与贡献
-
-欢迎贡献。请先阅读 [`CONTRIBUTING.md`](CONTRIBUTING.md) 了解开发环境、
-测试驱动流程与语言政策，并在提交 issue 或 pull request 前阅读
-[行为准则](.github/CODE_OF_CONDUCT.md)。面向自动化 agent 的仓库约定见 [`AGENTS.md`](AGENTS.md)。
+请参阅[从 WFC 1.x 迁移到 WFC 2.0](docs/migration/wfc-1-to-2.md)。用于预设理想结果的
+行为没有兼容开关，也没有受支持的替代路径。
 
 ## 许可证
 
-基于 [GNU 通用公共许可证第 2 版或后续版本](LICENSE) 发布。© 2026
-惟安数据科技（北京）有限公司（WEIAN DATA TECH (Beijing) Co., Ltd.）。依赖项版权与许可边界见
-[`inst/COPYRIGHTS`](inst/COPYRIGHTS)。
+WFC 采用 GPL (>= 2) 许可证。版权与贡献者信息见 `inst/COPYRIGHTS` 和
+`DESCRIPTION`。

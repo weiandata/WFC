@@ -9,7 +9,7 @@ development:
 
 home:
   title: WFC
-  description: Workflow-oriented survey weight calibration for R.
+  description: Verified, outcome-blind survey weight calibration for R.
 
 navbar:
   structure:
@@ -35,13 +35,11 @@ reference:
       - wf_guided_execute
       - wf_attach_weights
       - wf_assess_impact
-  - title: Dimensions and Targets
+  - title: Dimensions and Supporting Methods
     contents:
       - wf_dims
       - wf_target_population
       - wf_target_reference
-      - wf_target_manual
-      - wf_target_shrink
       - wf_target_propensity
   - title: Precheck and Remediation
     contents:
@@ -111,18 +109,18 @@ reference:
       - summary.wf_poststrat_plan
 
 articles:
-  - title: Core Workflow
-    navbar: Core workflow
+  - title: Verified WFC 2.0 Workflow
+    navbar: Verified WFC 2.0 workflow
     contents:
+      - safe-weighting-workflow
+      - guided-workflow
       - precheck-execute-diagnose
       - bringing-population-data
       - dirty-data-and-infeasibility
-  - title: Guided and Production Use
-    navbar: Guided and production use
+  - title: Production and Reporting
+    navbar: Production and reporting
     contents:
       - usability-foundations
-      - guided-workflow
-      - safe-weighting-workflow
       - production-infrastructure
   - title: Ecosystem and Methods
     navbar: Ecosystem and methods

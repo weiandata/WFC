@@ -427,16 +427,11 @@
 #'   character string, or invisibly the structured report when `file` is used.
 #' @export
 #' @examples
-#' data(wfc_example)
-#' target <- wf_target_population(
-#'   wfc_example$population,
-#'   c(gender = "gender", age = "age"),
-#'   "count",
-#'   wfc_example$dims,
-#'   by = "province"
-#' )
-#' weights <- wf_rake(wfc_example$sample, target, id = "id")
-#' wf_report(weights, target, audience = "manager")
+#' \dontrun{
+#' # After wf_execute_plan() returns locked weights:
+#' wf_report(locked, audience = "decision")
+#' wf_report(locked, audience = "statistician")
+#' }
 wf_report <- function(w, target = NULL,
                       audience = c(
                         "manager", "analyst", "decision", "statistician"

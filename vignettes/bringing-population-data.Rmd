@@ -1,8 +1,8 @@
 ---
-title: "Bringing your own population data"
+title: "Importing external targets with evidence"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Bringing your own population data}
+  %\VignetteIndexEntry{Importing external targets with evidence}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -11,83 +11,38 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-Population files rarely use the same column names as a survey. WFC handles this
-at the boundary through an explicit key map; the calibration engine only sees a
-validated canonical target.
+WFC 2.0 imports targets from a finalized CSV or Excel table and a companion DCF
+evidence record. It does not construct a production target from an unexplained
+runtime table.
 
-## Map an arbitrary schema
-
-```{r}
-library(WFC)
-data("wfc_example", package = "WFC")
-
-sample <- wfc_example$sample
-sample$region_code <- sample$province
-population <- wfc_example$population
-names(population) <- c("region_code", "sex_key", "age_band", "n_people")
-
+```{r template, eval=FALSE}
 dims <- wf_dims(
-  gender = c("female", "male"),
-  age = c("young", "old")
+  age_group = c("18-34", "35-54", "55+"),
+  region = c("north", "south")
 )
 
-target <- wf_target_population(
-  population,
-  key_map = c(gender = "sex_key", age = "age_band"),
-  count = "n_people",
-  dims = dims,
-  by = "region_code"
-)
-
-target$dims
-vapply(target$groups, function(group) group$total, numeric(1))
+wf_target_template("population-margins.csv", dims)
 ```
 
-`key_map` names are WFC dimension names and its values are source column names.
-Category keys are compared as character values. Counts must be finite,
-non-missing, and non-negative.
+Complete the companion `population-margins.csv.source.dcf` with publisher,
+dataset title, citation, reference period, population scope, retrieval date,
+license, transformation, selection timing, demo status, and the final SHA-256.
 
-## Choose the target scale
-
-Population totals are the default. For a sample-scale calibration, WFC keeps
-the population shares but rescales each group total to its sample size.
-
-```{r}
-sample_scale <- wf_target_population(
-  population,
-  key_map = c(gender = "sex_key", age = "age_band"),
-  count = "n_people",
-  dims = dims,
-  by = "region_code",
-  scale = "sample",
-  sample = sample
+```{r import, eval=FALSE}
+target <- wf_import_target(
+  "population-margins.csv",
+  "population-margins.csv.source.dcf",
+  dims,
+  key_map = c(age_group = "age_group", region = "region"),
+  count = "population_count",
+  production = TRUE
 )
-
-vapply(sample_scale$groups, function(group) group$total, numeric(1))
 ```
 
-Use `scale = "custom"` with named `totals` when another reporting total is the
-authority.
+For joint-cell post-stratification, the imported population table must contain
+the required joint combinations. For an independent reference sample, use
+`wf_import_reference()` with its own evidence file.
 
-## Retain joint cells for post-stratification
-
-Raking needs margins. Post-stratification additionally needs the joint
-population cells, requested explicitly with `keep_joint = TRUE`.
-
-```{r}
-joint_target <- wf_target_population(
-  population,
-  key_map = c(gender = "sex_key", age = "age_band"),
-  count = "n_people",
-  dims = dims,
-  by = "region_code",
-  keep_joint = TRUE
-)
-
-names(joint_target$joint)
-head(joint_target$joint[[1]])
-```
-
-Do not reshape population data by hand after constructing a target. Rebuild the
-target from the authoritative source so its totals, margins, joint cells, and
-metadata remain consistent.
+The checksum proves that the imported data match the evidence record. It does
+not prove that the publisher, transformation, or scientific choice is valid;
+those remain review questions.

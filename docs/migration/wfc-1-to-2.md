@@ -25,8 +25,11 @@ editing an imported object.
 
 Suppose `survey-design.csv` contains only `person_id`, `age_group`, `region`,
 and an optional base weight. It must not contain the study outcomes used later.
-Suppose `population-margins.csv` is the machine-readable table and
-`population-source.pdf` is the independently obtained source document.
+Suppose `population-margins.csv` is the machine-readable table,
+`population-source.pdf` is the independently obtained source document, and
+`population-source.dcf` is its completed one-record evidence file. The DCF
+records the citation or location of the PDF and the checksum of the CSV; WFC
+reads the DCF rather than the PDF itself.
 
 ```r
 library(WFC)
@@ -45,7 +48,7 @@ design <- wf_prepare_design(
 
 target <- wf_import_target(
   data_file = "population-margins.csv",
-  source_file = "population-source.pdf",
+  source_file = "population-source.dcf",
   dims = dims,
   key_map = c(age_group = "age_group", region = "region"),
   count = "population_count",
@@ -69,8 +72,8 @@ approval <- wf_approve_plan(
 )
 
 weights <- wf_execute_plan(plan, approval, design, target)
-decision_view <- wf_report(weights, target, audience = "decision")
-statistical_view <- wf_report(weights, target, audience = "statistician")
+decision_view <- wf_report(weights, audience = "decision")
+statistical_view <- wf_report(weights, audience = "statistician")
 ```
 
 Use `wf_target_template("population-margins-template.csv", dims)` if the expected
@@ -85,7 +88,7 @@ must preserve returned identities instead of recreating or editing objects.
 request <- list(
   design_file = "survey-design.csv",
   target_file = "population-margins.csv",
-  source_file = "population-source.pdf",
+  source_file = "population-source.dcf",
   id = "person_id",
   calibration = c("age_group", "region")
 )
@@ -130,7 +133,7 @@ reference sample, use the separate reference importer:
 ```r
 target <- wf_import_reference(
   data_file = "reference-sample.csv",
-  source_file = "reference-methodology.pdf",
+  source_file = "reference-source.dcf",
   dims = dims,
   feature = "reference_weight",
   production = TRUE
