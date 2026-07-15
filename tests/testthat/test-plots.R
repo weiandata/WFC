@@ -45,7 +45,7 @@ make_plot_propensity <- function() {
 
 test_that("plot.wf_weights draws groups and restores graphics parameters", {
   fixture <- make_weightflow_fixture()
-  weights <- wf_rake(fixture$sample, fixture$target, id = "id")
+  weights <- .wf_rake_engine(fixture$sample, fixture$target, id = "id")
   weights$provenance$trim <- c(0.5, 3)
 
   path <- open_test_device()
@@ -62,7 +62,7 @@ test_that("plot.wf_weights draws groups and restores graphics parameters", {
 
 test_that("plot.wf_diagnostics draws deff and ESS panels", {
   fixture <- make_weightflow_fixture()
-  weights <- wf_rake(fixture$sample, fixture$target, id = "id")
+  weights <- .wf_rake_engine(fixture$sample, fixture$target, id = "id")
   diagnostics <- wf_diagnose(weights, fixture$target)
 
   path <- open_test_device()

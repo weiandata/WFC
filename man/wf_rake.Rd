@@ -2,54 +2,21 @@
 % Please edit documentation in R/rake.R
 \name{wf_rake}
 \alias{wf_rake}
-\title{Calibrate sample weights to a target by grouped raking}
+\title{Rake verified design data to a verified external target}
 \usage{
-wf_rake(
-  sample,
-  target,
-  id = NULL,
-  na = c("fractional", "drop", "error"),
-  trim = NULL,
-  trim_cycles = 4,
-  tol = 1e-06,
-  max_iter = 200,
-  precheck = TRUE,
-  init_weight = NULL,
-  parallel = FALSE,
-  progress = FALSE
-)
+wf_rake(design, target, ...)
 }
 \arguments{
-\item{sample}{Sample data frame.}
+\item{design}{An unchanged \code{wf_design_data}.}
 
-\item{target}{A \code{wf_target} object.}
+\item{target}{An unchanged, non-demo \code{wf_verified_target}.}
 
-\item{id}{Optional unique unit identifier column.}
-
-\item{na}{Missing calibration data policy.}
-
-\item{trim}{Optional two-element lower/upper multiplier vector.}
-
-\item{trim_cycles}{Number of trim/rerake cycles.}
-
-\item{tol}{Convergence tolerance.}
-
-\item{max_iter}{Maximum iterations.}
-
-\item{precheck}{Whether to run \code{wf_precheck()} before raking.}
-
-\item{init_weight}{Optional column of initial weights. If \code{NULL}, raking
-starts from uniform weights (unchanged behaviour).}
-
-\item{parallel}{Whether to process independent target groups with forked
-parallelism where available, using at most two workers. Windows falls back
-to serial execution.}
-
-\item{progress}{Whether to show a \code{cli} progress bar when \code{cli} is installed.}
+\item{...}{Raking settings other than ID and base-weight roles, which are
+owned by \code{design}.}
 }
 \value{
-A \code{wf_weights} object.
+A \code{wf_weights} object carrying verified input identities.
 }
 \description{
-Runs the precheck -> execute portion of the weighting workflow.
+Enforces the WFC 2.0 verified-input boundary before grouped raking.
 }

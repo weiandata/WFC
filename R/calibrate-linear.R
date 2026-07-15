@@ -345,7 +345,6 @@
 #' @param method Reported method label ("greg" or "logit").
 #' @param bounds `c(L, U)` for logit.
 #' @param init_weight Optional base-weight column.
-#' @param moments Optional named target means for entropy balancing.
 #' @param na "drop" or "error".
 #' @param id Optional id column.
 #' @param tol Convergence tolerance.
@@ -355,7 +354,6 @@
 #' @noRd
 .wf_lincalibrate <- function(sample, target, distance, method,
                              bounds = NULL, init_weight = NULL,
-                             moments = NULL,
                              na = c("drop", "error"), id = NULL,
                              tol = 1e-8, max_iter = 100, precheck = TRUE) {
   na <- match.arg(na)
@@ -378,41 +376,7 @@
                "wf_error_schema", list(dim = d))
     }
   }
-  if (!is.null(moments)) {
-    if (!is.numeric(moments) || length(moments) == 0 ||
-        is.null(names(moments)) || any(!nzchar(names(moments))) ||
-        anyNA(moments) || any(!is.finite(moments))) {
-      wf_abort(
-        "`moments` must be NULL or a named finite numeric vector of target means.",
-        "wf_error_input",
-        list(moments = moments)
-      )
-    }
-    missing_moments <- setdiff(names(moments), names(sample))
-    if (length(missing_moments) > 0) {
-      wf_abort(
-        sprintf(
-          "Sample is missing moment variable(s): %s.",
-          paste(missing_moments, collapse = ", ")
-        ),
-        "wf_error_schema",
-        list(missing = missing_moments)
-      )
-    }
-    not_numeric <- names(moments)[!vapply(sample[names(moments)], is.numeric, logical(1))]
-    if (length(not_numeric) > 0) {
-      wf_abort(
-        sprintf(
-          "Moment variable(s) must be numeric: %s.",
-          paste(not_numeric, collapse = ", ")
-        ),
-        "wf_error_schema",
-        list(variables = not_numeric)
-      )
-    }
-  }
-
-  na_vars <- c(dvars, names(moments))
+  na_vars <- dvars
   na_table <- sapply(na_vars, function(d) is.na(sample[[d]]))
   if (is.null(dim(na_table))) {
     na_table <- matrix(na_table, nrow = nrow(sample))
@@ -420,10 +384,10 @@
   na_mask <- rowSums(na_table) > 0
   if (any(na_mask)) {
     if (na == "error") {
-      wf_abort(sprintf("%d row(s) have NA in calibration dimensions or moment variables.", sum(na_mask)),
+      wf_abort(sprintf("%d row(s) have NA in calibration dimensions.", sum(na_mask)),
                "wf_error_schema", list(n = sum(na_mask)))
     }
-    wf_warn(sprintf("na='drop': removed %d row(s) with NA in calibration dimensions or moment variables.",
+    wf_warn(sprintf("na='drop': removed %d row(s) with NA in calibration dimensions.",
                     sum(na_mask)), "wf_warning_data")
     sample <- sample[!na_mask, , drop = FALSE]
   }
@@ -451,28 +415,11 @@
   res_rows <- list()
   logs <- list()
   achieved <- list()
-  moment_rows <- list()
   for (g in intersect(names(target$groups), unique(gkey))) {
     sel <- which(gkey == g)
     gr <- target$groups[[g]]
     sub <- sample[sel, , drop = FALSE]
     built <- .wf_lincal_build(sub, dvars, gr)
-    if (!is.null(moments)) {
-      for (moment in names(moments)) {
-        built$X <- cbind(built$X, as.numeric(sub[[moment]]))
-        target_total <- moments[[moment]] * gr$total
-        built$t <- c(built$t, target_total)
-        built$labels <- rbind(
-          built$labels,
-          data.frame(
-            dim = "_moment_",
-            category = moment,
-            target = target_total,
-            stringsAsFactors = FALSE
-          )
-        )
-      }
-    }
     d_g <- if (is.null(iw)) rep(gr$total / length(sel), length(sel)) else iw[sel]
     fit <- .wf_lincal_group(built$X, d_g, built$t, dist,
                             tol, max_iter, gr$total, g)
@@ -503,29 +450,16 @@
       )
     })
     names(achieved[[g]]) <- dvars
-    if (!is.null(moments)) {
-      moment_rows[[g]] <- data.frame(
-        group = g,
-        variable = names(moments),
-        target_mean = unname(moments),
-        achieved_mean = vapply(names(moments), function(moment) {
-          sum(fit$w * sub[[moment]]) / sum(fit$w)
-        }, numeric(1)),
-        stringsAsFactors = FALSE
-      )
-    }
   }
 
   out <- structure(list(
     data = do.call(rbind, res_rows),
     log = do.call(rbind, logs),
     achieved = achieved,
-    moments = if (length(moment_rows) > 0) do.call(rbind, moment_rows) else NULL,
     provenance = list(
       method = method,
       distance = distance,
       bounds = bounds,
-      moments = names(moments),
       init_weight = init_weight,
       na = na,
       dims = dvars,

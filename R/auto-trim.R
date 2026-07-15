@@ -4,34 +4,48 @@
 #' between design effect and residual margin error. The function recommends a
 #' cap but never applies it to a production result.
 #'
-#' @param sample Sample data frame.
-#' @param target A `wf_target` object.
-#' @param id Optional unique unit identifier column.
+#' @param design An unchanged `wf_design_data`.
+#' @param target An unchanged, non-demo `wf_verified_target`.
 #' @param caps Unique positive finite upper-cap multipliers.
 #' @param lo Positive lower-cap multiplier used for every finite candidate.
 #' @param max_deff Maximum acceptable worst-group design effect.
 #' @param max_residual Maximum acceptable worst relative margin residual.
-#' @param ... Additional arguments passed to [wf_rake()]. `trim` is not allowed
-#'   because this function owns the candidate trim settings.
+#' @param ... Additional raking settings. ID and base-weight roles are owned by
+#'   `design`; `trim` is not allowed because this function owns candidates.
 #'
 #' @return A `wf_auto_trim` object containing the candidate frontier and the
 #'   recommended cap. `Inf` means no trimming is needed; `NA` means no candidate
 #'   meets both criteria.
 #' @export
-#' @examples
-#' data(wfc_example)
-#' target <- wf_target_population(
-#'   wfc_example$population,
-#'   c(gender = "gender", age = "age"),
-#'   "count",
-#'   wfc_example$dims,
-#'   by = "province"
-#' )
-#' wf_auto_trim(wfc_example$sample, target, id = "id", caps = c(2, 4))
-wf_auto_trim <- function(sample, target, id = NULL,
+wf_auto_trim <- function(design, target,
                          caps = c(2, 3, 4, 5, 6, 8, 10, 12),
                          lo = 0.05, max_deff = 6,
                          max_residual = 0.02, ...) {
+  .wf_execute_verified_engine(
+    design,
+    target,
+    "auto_trim",
+    c(
+      list(
+        caps = caps,
+        lo = lo,
+        max_deff = max_deff,
+        max_residual = max_residual
+      ),
+      list(...)
+    )
+  )
+}
+
+#' Internal automatic-trimming engine.
+#'
+#' @keywords internal
+#' @noRd
+.wf_auto_trim_engine <- function(sample, target, id = NULL,
+                                 caps = c(2, 3, 4, 5, 6, 8, 10, 12),
+                                 lo = 0.05, max_deff = 6,
+                                 max_residual = 0.02,
+                                 init_weight = NULL, ...) {
   if (!is.data.frame(sample) || nrow(sample) == 0) {
     wf_abort("`sample` must be a non-empty data frame.", "wf_error_input")
   }
@@ -65,6 +79,9 @@ wf_auto_trim <- function(sample, target, id = NULL,
   }
 
   dots <- list(...)
+  if (!is.null(init_weight)) {
+    dots$init_weight <- init_weight
+  }
   if ("trim" %in% names(dots)) {
     wf_abort(
       "`trim` cannot be supplied to wf_auto_trim(); use `caps` and `lo`.",
@@ -86,7 +103,7 @@ wf_auto_trim <- function(sample, target, id = NULL,
     )
     fit <- tryCatch(
       withCallingHandlers(
-        do.call(wf_rake, args),
+        do.call(.wf_rake_engine, args),
         warning = function(w) {
           warnings <<- c(warnings, conditionMessage(w))
           invokeRestart("muffleWarning")

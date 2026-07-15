@@ -1,8 +1,8 @@
 ---
-title: "The precheck-execute-diagnose workflow"
+title: "Precheck, verified execution, and diagnosis"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{The precheck-execute-diagnose workflow}
+  %\VignetteIndexEntry{Precheck, verified execution, and diagnosis}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -11,75 +11,39 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-WFC treats weighting as a reviewable workflow, not a single optimizer call. A
-normal analysis declares the dimensions, builds one canonical target, checks
-feasibility, runs a calibration engine, and inspects the result.
+Precheck is diagnostic; execution remains behind the verified boundary.
 
-## Declare dimensions and build a target
-
-The bundled data are fully simulated and contain no private survey records.
-
-```{r}
-library(WFC)
-data("wfc_example", package = "WFC")
-
-sample <- wfc_example$sample
-population <- wfc_example$population
-dims <- wfc_example$dims
-
-target <- wf_target_population(
-  population,
-  key_map = c(gender = "gender", age = "age"),
-  count = "count",
-  dims = dims,
-  by = "province"
-)
-```
-
-Every external source becomes the same `wf_target` representation. Downstream
-engines therefore do not depend on the original population-table schema.
-
-## Precheck before execution
-
-```{r}
-check <- wf_precheck(sample, target, id = "id")
-check
-```
-
-Errors block execution. Warnings and notes remain visible and are carried into
-the audit trail; there is no `force = TRUE` bypass for infeasible calibration.
-
-## Execute and diagnose
-
-```{r}
-weights <- wf_rake(sample, target, id = "id")
-weights
-
-diagnostics <- wf_diagnose(weights, target = target)
-diagnostics
-diagnostics$table
-```
-
-The returned `wf_weights` object contains unit weights, convergence logs,
-achieved margins, and provenance. Keep that object with the published estimate:
-it records the settings and package version needed to reconstruct the run.
-
-## Use the unified dispatcher
-
-The same target can be passed through the common interface. This returns the
-same `wf_weights` contract as the direct engine call.
-
-```{r}
-via_dispatcher <- wf_calibrate(
-  sample,
+```{r precheck, eval=FALSE}
+precheck <- wf_precheck(
+  design$data,
   target,
-  method = "raking",
-  id = "id"
+  id = design$roles$id
 )
 
-all.equal(
-  weights$data$weight,
-  via_dispatcher$data$weight,
-  tolerance = 1e-8
+precheck$issues
+```
+
+Resolve blocking support problems through a declared, reviewable cell plan.
+Do not change targets after seeing outcomes.
+
+```{r execute, eval=FALSE}
+plan <- wf_plan_weights(design, target, dims, method = "raking")
+approval <- wf_approve_plan(
+  plan,
+  approver = "Reviewer full name",
+  role = "Statistician"
+)
+locked <- wf_execute_plan(plan, approval, design, target)
+
+diagnostics <- wf_diagnose(locked, target = target)
+```
+
+Direct statistical use is also verified:
+
+```{r direct, eval=FALSE}
+via_dispatcher <- wf_calibrate(
+  design,
+  target,
+  method = "raking"
 )
 ```

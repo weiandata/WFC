@@ -68,8 +68,15 @@
 #' @keywords internal
 #' @noRd
 .wf_pipeline_target_spec <- function(target) {
-  if (inherits(target, "wf_target")) {
+  if (inherits(target, "wf_verified_target")) {
     target <- list(mode = "object", target = target)
+  } else if (inherits(target, "wf_target")) {
+    .wf_safety_abort(
+      "verified_target_required",
+      "Pipeline object targets must be verified external targets.",
+      "target",
+      next_actions = "import_verified_target"
+    )
   }
   if (!is.list(target)) {
     wf_abort("`target` must be a list or wf_target object.", "wf_error_input")
@@ -78,7 +85,15 @@
   if (!.wf_is_string(mode)) {
     wf_abort("`target$mode` must be one non-empty string.", "wf_error_input")
   }
-  supported <- c("population", "reference", "manual", "object")
+  if (identical(mode, "manual")) {
+    .wf_safety_abort(
+      "manual_pipeline_unsupported",
+      "WFC 2.0 does not support manual pipeline targets.",
+      "target$mode",
+      next_actions = "import_verified_target"
+    )
+  }
+  supported <- c("population", "reference", "object")
   if (!mode %in% supported) {
     wf_abort(
       sprintf(
@@ -90,24 +105,31 @@
       list(mode = mode)
     )
   }
-  if (mode == "population") {
-    if (is.null(target$key_map) || is.null(target$count)) {
-      wf_abort(
-        "Pipeline target mode 'population' requires `key_map` and `count`.",
-        "wf_error_schema"
-      )
-    }
-  }
-  if (mode == "reference" && is.null(target$feature)) {
+  allowed_fields <- if (mode == "object") c("mode", "target") else "mode"
+  unknown_fields <- setdiff(names(target), allowed_fields)
+  if (length(unknown_fields) > 0L) {
     wf_abort(
-      "Pipeline target mode 'reference' requires `feature`.",
-      "wf_error_schema"
+      sprintf(
+        "Unsupported pipeline target field(s) for %s mode: %s.",
+        mode,
+        paste(unknown_fields, collapse = ", ")
+      ),
+      "wf_error_input",
+      list(fields = unknown_fields, mode = mode)
     )
   }
-  if (mode == "object" && !inherits(target$target, "wf_target")) {
-    wf_abort(
-      "Pipeline target mode 'object' requires `target` to be a wf_target.",
-      "wf_error_schema"
+  if (mode == "object" &&
+      (!inherits(target$target, "wf_verified_target") ||
+       isTRUE(target$target$demo_only) ||
+       !identical(
+         target$target$identity,
+         .wf_verified_target_identity(target$target)
+       ))) {
+    .wf_safety_abort(
+      "verified_target_required",
+      "Pipeline object mode requires an unchanged, non-demo verified target.",
+      "target",
+      next_actions = "import_verified_target"
     )
   }
   target
@@ -119,30 +141,30 @@
 #' @keywords internal
 #' @noRd
 .wf_pipeline_calibrate_controls <- function(method) {
-  common <- c("method", "id")
+  common <- "method"
   switch(
     method,
     raking = c(
       common, "na", "trim", "trim_cycles", "tol", "max_iter",
-      "precheck", "init_weight"
+      "precheck"
     ),
     poststrat = c(
-      common, "min_cell", "ladder", "init_weight", "granularity",
+      common, "min_cell", "ladder", "granularity",
       "empty_cell", "precheck", "tol"
     ),
     greg = c(
-      common, "bounds", "init_weight", "na", "tol", "max_iter",
+      common, "bounds", "na", "tol", "max_iter",
       "precheck"
     ),
     logit = c(
-      common, "bounds", "init_weight", "na", "tol", "max_iter",
+      common, "bounds", "na", "tol", "max_iter",
       "precheck"
     ),
     soft = c(
-      common, "tolerance", "init_weight", "na", "max_outer", "precheck"
+      common, "tolerance", "na", "max_outer", "precheck"
     ),
     ebal = c(
-      common, "moments", "init_weight", "na", "tol", "max_iter",
+      common, "na", "tol", "max_iter",
       "precheck"
     )
   )
@@ -208,6 +230,27 @@
         "wf_error_schema"
       )
     }
+  }
+  if ("moments" %in% names(stages$calibrate)) {
+    .wf_safety_abort(
+      "inline_moments_unsupported",
+      paste(
+        "WFC 2.0 does not accept inline target moments.",
+        "Use verified external margins."
+      ),
+      "moments",
+      next_actions = "import_verified_external_margins"
+    )
+  }
+  owned <- intersect(names(stages$calibrate), c("id", "init_weight"))
+  if (length(owned) > 0L) {
+    .wf_safety_abort(
+      "design_role_override_unsupported",
+      "Pipeline ID and base-weight roles must come from wf_design_data.",
+      owned[[1]],
+      evidence = list(arguments = owned),
+      next_actions = "prepare_design_with_required_roles"
+    )
   }
 
   method <- stages$calibrate$method
@@ -287,43 +330,19 @@
 #' Declare a production weighting pipeline
 #'
 #' Creates a serializable specification for a recurring weighting run. The
-#' specification records how to build the target, which weighting stages to run,
-#' and which post-run validation thresholds to check. It stores no runtime
-#' sample data unless the caller deliberately supplies a ready `wf_target`.
+#' specification records which verified target mode and calibration stage to
+#' use and which post-run validation thresholds to check.
 #'
 #' @param target Target declaration. Use a list with `mode = "population"`,
-#'   `"reference"`, or `"manual"`, or pass a ready `wf_target`.
-#' @param stages Named stage list. A `calibrate` stage is required; an optional
-#'   `propensity` stage runs before calibration.
+#'   `"reference"`, or `"object"`, or pass a `wf_verified_target`.
+#' @param stages Named stage list with a required `calibrate` stage.
 #' @param validate Optional validation thresholds. Supported keys are
 #'   `max_deff` and `max_margin_dev`.
 #'
 #' @return A `wf_pipeline` object.
 #' @export
-#'
-#' @examples
-#' spec <- wf_pipeline(
-#'   target = list(
-#'     mode = "population",
-#'     key_map = c(gender = "gender"),
-#'     count = "count"
-#'   ),
-#'   stages = list(calibrate = list(method = "raking", id = "id")),
-#'   validate = list(max_deff = 6)
-#' )
 wf_pipeline <- function(target, stages, validate = NULL) {
   target <- .wf_pipeline_target_spec(target)
-  if (identical(target$mode, "manual")) {
-    .wf_warn_deprecated(
-      paste(
-        "Manual pipeline targets are deprecated because subjective margins",
-        "can steer results; use verified external target import instead."
-      ),
-      feature = "wf_pipeline(target = list(mode = 'manual'))",
-      replacement = "wf_guided_plan() with a verified target file",
-      risk_code = "subjective_manual_pipeline_target"
-    )
-  }
   stages <- .wf_pipeline_stage_spec(stages)
   validate <- .wf_pipeline_validation_spec(validate)
   hash_input <- list(target = target, stages = stages, validate = validate)
@@ -379,106 +398,62 @@ print.wf_pipeline <- function(x, ...) {
 #' Build the runtime target for a pipeline run.
 #'
 #' @param spec A `wf_pipeline` object.
-#' @param sample Runtime sample data.
 #' @param dims A `wf_dims` object.
-#' @param population Runtime population data.
-#' @param reference Runtime reference data.
-#' @param margins Runtime manual margins.
+#' @param population Runtime verified population target.
+#' @param reference Runtime verified reference target.
 #' @param need_joint Whether a joint population target is needed.
 #' @keywords internal
 #' @noRd
-.wf_pipeline_build_target <- function(spec, sample, dims, population,
-                                      reference, margins, need_joint) {
-  target <- spec$target
-  mode <- target$mode
-  if (mode == "object") {
-    return(target$target)
+.wf_pipeline_build_target <- function(spec, dims, population,
+                                      reference, need_joint) {
+  mode <- spec$target$mode
+  candidate <- switch(
+    mode,
+    object = spec$target$target,
+    population = population,
+    reference = reference,
+    NULL
+  )
+  if (!inherits(candidate, "wf_verified_target") ||
+      isTRUE(candidate$demo_only) ||
+      !identical(candidate$identity, .wf_verified_target_identity(candidate))) {
+    .wf_safety_abort(
+      "verified_target_required",
+      sprintf(
+        "Pipeline target mode '%s' requires an unchanged verified target.",
+        mode
+      ),
+      mode,
+      next_actions = "import_verified_target"
+    )
   }
-
-  .wf_pipeline_require_dims(dims)
-  args <- target[setdiff(names(target), "mode")]
-
-  if (mode == "population") {
-    if (is.null(population)) {
-      wf_abort(
-        "Pipeline target mode 'population' requires `population` in wf_run().",
-        "wf_error_input"
-      )
-    }
-    reserved <- intersect(names(args), c("pop", "dims", "sample"))
-    if (length(reserved) > 0) {
-      wf_abort(
-        sprintf(
-          "Pipeline target mode 'population' owns runtime argument(s): %s.",
-          paste(reserved, collapse = ", ")
-        ),
-        "wf_error_schema",
-        list(arguments = reserved)
-      )
-    }
-    if (isTRUE(need_joint) && is.null(args$keep_joint)) {
-      args$keep_joint <- TRUE
-    }
-    if (identical(args$scale, "sample")) {
-      args$sample <- sample
-    }
-    return(do.call(
-      wf_target_population,
-      c(list(pop = population, dims = dims), args)
-    ))
+  if (mode %in% c("population", "reference") &&
+      !identical(candidate$source_type, mode)) {
+    .wf_safety_abort(
+      "pipeline_target_type_mismatch",
+      "The verified target source type does not match the pipeline mode.",
+      mode,
+      evidence = list(source_type = candidate$source_type)
+    )
   }
-
-  if (mode == "reference") {
-    if (is.null(reference)) {
-      wf_abort(
-        "Pipeline target mode 'reference' requires `reference` in wf_run().",
-        "wf_error_input"
-      )
-    }
-    reserved <- intersect(names(args), c("ref", "dims"))
-    if (length(reserved) > 0) {
-      wf_abort(
-        sprintf(
-          "Pipeline target mode 'reference' owns runtime argument(s): %s.",
-          paste(reserved, collapse = ", ")
-        ),
-        "wf_error_schema",
-        list(arguments = reserved)
-      )
-    }
-    return(do.call(
-      wf_target_reference,
-      c(list(ref = reference, dims = dims), args)
-    ))
+  if (!is.null(dims) &&
+      (!inherits(dims, "wf_dims") ||
+       !identical(names(dims$vars), candidate$dims))) {
+    .wf_safety_abort(
+      "target_dimensions_mismatch",
+      "Pipeline dimensions must exactly match the verified target.",
+      "dims"
+    )
   }
-
-  if (mode == "manual") {
-    manual_margins <- args$margins
-    args$margins <- NULL
-    if (is.null(manual_margins)) {
-      manual_margins <- margins
-    }
-    if (is.null(manual_margins)) {
-      wf_abort(
-        "Pipeline target mode 'manual' requires margins in the spec or wf_run().",
-        "wf_error_input"
-      )
-    }
-    reserved <- intersect(names(args), "dims")
-    if (length(reserved) > 0) {
-      wf_abort(
-        "Pipeline target mode 'manual' owns runtime argument `dims`.",
-        "wf_error_schema",
-        list(arguments = reserved)
-      )
-    }
-    return(do.call(
-      wf_target_manual,
-      c(list(margins = manual_margins, dims = dims), args)
-    ))
+  if (isTRUE(need_joint) && is.null(candidate$joint)) {
+    .wf_safety_abort(
+      "poststrat_joint_target_required",
+      "Post-stratification requires a verified joint population target.",
+      "target",
+      next_actions = "import_joint_population_target"
+    )
   }
-
-  wf_abort("Unsupported pipeline target mode.", "wf_error_internal")
+  candidate
 }
 
 #' Choose a collision-free internal column name.
@@ -681,41 +656,52 @@ print.wf_pipeline <- function(x, ...) {
 
 #' Run a production weighting pipeline
 #'
-#' Executes a `wf_pipeline()` specification against runtime sample and target
-#' data. The run builds the declared target, optionally fits a propensity
-#' pseudo-weight stage, runs the calibration stage, records pipeline provenance,
-#' and evaluates any declared validation thresholds.
+#' Executes a `wf_pipeline()` specification against verified design and target
+#' objects, records provenance, and evaluates declared validation thresholds.
 #'
 #' @param spec A `wf_pipeline` object.
-#' @param sample Runtime sample data frame.
-#' @param dims A `wf_dims` object required when the pipeline builds its target.
-#' @param population Runtime population data for `target$mode = "population"`.
-#' @param reference Runtime reference data for reference targets or propensity.
-#' @param margins Runtime manual margins for `target$mode = "manual"` when
-#'   margins are not embedded in the spec.
-#' @param base_weight Optional starting weight column or numeric vector. Numeric
-#'   vectors make `wf_run()` convenient as a `wf_replicates()` refit body.
+#' @param sample An unchanged `wf_design_data` object.
+#' @param dims Optional `wf_dims` used to verify target dimensions.
+#' @param population A verified population target for population mode.
+#' @param reference A verified reference target for reference mode.
+#' @param base_weight Deprecated runtime base-weight input. WFC 2.0 requires
+#'   the base-weight role to be declared in `sample`; supplying this argument
+#'   raises a safety error.
 #'
 #' @return A `wf_weights` object with pipeline provenance and optional
 #'   `$pipeline_validation`.
 #' @export
 wf_run <- function(spec, sample, dims = NULL, population = NULL,
-                   reference = NULL, margins = NULL, base_weight = NULL) {
+                   reference = NULL, base_weight = NULL) {
   if (!inherits(spec, "wf_pipeline")) {
     wf_abort("`spec` must be a wf_pipeline object.", "wf_error_input")
   }
-  if (!is.data.frame(sample) || nrow(sample) == 0) {
-    wf_abort("`sample` must be a non-empty data frame.", "wf_error_input")
+  if (!inherits(sample, "wf_design_data") ||
+      !identical(sample$identity, .wf_design_identity(sample$data, sample$roles))) {
+    .wf_safety_abort(
+      "verified_weighting_inputs_required",
+      "`sample` must be an unchanged wf_design_data object.",
+      "sample",
+      next_actions = "prepare_design_data"
+    )
   }
-  if (!is.null(margins)) {
-    .wf_warn_deprecated(
+  if (!is.null(base_weight)) {
+    .wf_safety_abort(
+      "design_role_override_unsupported",
+      "Declare the base-weight role in wf_prepare_design(), not wf_run().",
+      "base_weight",
+      next_actions = "prepare_design_with_required_roles"
+    )
+  }
+  if (!is.null(spec$stages$propensity)) {
+    .wf_safety_abort(
+      "pipeline_propensity_unsupported",
       paste(
-        "Runtime manual margins are deprecated because run-time target choices",
-        "can steer results; import and review a verified target first."
+        "WFC 2.0 pipelines do not fit a runtime propensity stage before",
+        "verified calibration."
       ),
-      feature = "wf_run(..., margins =)",
-      replacement = "wf_guided_plan() with a verified target file",
-      risk_code = "subjective_runtime_margins"
+      "stages$propensity",
+      next_actions = "use_preapproved_design_variables"
     )
   }
 
@@ -725,46 +711,18 @@ wf_run <- function(spec, sample, dims = NULL, population = NULL,
     method <- "raking"
   }
 
-  base <- .wf_pipeline_base_weight(sample, base_weight)
-  work <- base$sample
-  init_col <- base$column
-  stage_results <- list()
-
-  if (!is.null(spec$stages$propensity)) {
-    propensity <- .wf_pipeline_run_propensity(
-      work,
-      reference,
-      spec$stages$propensity,
-      init_col
-    )
-    work <- propensity$sample
-    init_col <- propensity$column
-    stage_results$propensity <- propensity$result
-  }
-
   target <- .wf_pipeline_build_target(
     spec,
-    work,
     dims,
     population,
     reference,
-    margins,
     need_joint = identical(method, "poststrat")
   )
 
   args <- calibrate[setdiff(names(calibrate), "method")]
-  if (!is.null(init_col) && !is.null(args$init_weight)) {
-    wf_abort(
-      "The pipeline has an initial-weight stage and `calibrate$init_weight`; keep only one source of initial weights.",
-      "wf_error_input"
-    )
-  }
-  if (!is.null(init_col)) {
-    args$init_weight <- init_col
-  }
   w <- do.call(
     wf_calibrate,
-    c(list(sample = work, target = target, method = method), args)
+    c(list(design = sample, target = target, method = method), args)
   )
 
   w$provenance$pipeline_hash <- spec$hash
@@ -776,11 +734,6 @@ wf_run <- function(spec, sample, dims = NULL, population = NULL,
     validate = spec$validate,
     package_version = spec$package_version
   )
-  if (length(stage_results) > 0) {
-    w$provenance$pipeline_stages <- lapply(stage_results, function(stage) {
-      stage$provenance
-    })
-  }
   validation <- .wf_pipeline_validate_result(w, target, spec$validate)
   if (!is.null(validation)) {
     w$pipeline_validation <- validation

@@ -93,7 +93,7 @@ test_that("wf_replicates + wf_variance run through a real raking refit", {
 
   refit <- function(data, weights) {
     data$.bw <- weights
-    wf_rake(data, fixture$target, id = "id", init_weight = ".bw",
+    .wf_rake_engine(data, fixture$target, id = "id", init_weight = ".bw",
             precheck = FALSE)
   }
 

@@ -1,8 +1,8 @@
 ---
-title: "Verified, outcome-blind weighting in WFC 1.1"
+title: "Verified, outcome-blind weighting in WFC 2.0"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Verified, outcome-blind weighting in WFC 1.1}
+  %\VignetteIndexEntry{Verified, outcome-blind weighting in WFC 2.0}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

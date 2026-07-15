@@ -1,3 +1,30 @@
+# WFC 2.0.0
+
+WFC 2.0 makes the verified, outcome-blind workflow the only supported path to
+weight construction. This is a deliberate breaking release: unsafe 1.x
+compatibility paths have no shim or override.
+
+* Public calibration, raking, post-stratification, automatic trimming,
+  automatic weighting, and pipeline entry points now require unchanged
+  `wf_design_data` and non-demo `wf_verified_target` objects before an engine
+  can run.
+* Removed `wf_target_manual()`, `wf_target_shrink()`, inline moment targets,
+  manual pipeline targets, and run-time margin injection. There is no supported
+  replacement for pass-rate goals, desired outcome means or intervals, or
+  other target choices intended to steer a result.
+* Preserved categorical entropy and fixed, predeclared soft-calibration
+  tolerances only when constraints come from a verified external target; WFC
+  does not search for a target or tolerance after seeing an outcome.
+* Rewrote current READMEs and articles around source evidence, design-only
+  inputs, deterministic planning, qualified human approval, locked execution,
+  post-lock impact assessment, and audit export.
+* Added concrete import samples for survey researchers and a stable refusal and
+  handoff contract for AI agents. Decision makers receive a compact view while
+  statistical users can inspect the full evidence and diagnostics from the
+  same result object.
+* Added a WFC 1.x to 2.0 migration guide. Removed behaviors require a scientific
+  redesign rather than an API rename.
+
 # WFC 1.1.0
 
 Safety-oriented weighting workflow. This release adds a controlled path for

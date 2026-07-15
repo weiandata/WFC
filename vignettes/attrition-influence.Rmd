@@ -1,134 +1,45 @@
 ---
-title: "Attrition weighting and influence diagnostics in WFC 0.15"
+title: "Attrition and influence after a verified design"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Attrition weighting and influence diagnostics in WFC 0.15}
+  %\VignetteIndexEntry{Attrition and influence after a verified design}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>", message = FALSE)
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-WFC 0.15 adds two production diagnostics for recurring surveys and panels:
-attrition weighting for wave-to-wave retention, and high-influence unit
-diagnostics for reviewing extreme calibrated weights. It also adds Fay's BRR to
-the existing replicate-weight variance workflow.
+Attrition and influence diagnostics can support sensitivity review, but they do
+not replace the verified external target or authorize outcome-driven reweighting.
 
-## Weight retained panel units
+After a weight plan is locked, inspect influential units without changing the
+weights:
 
-`wf_attrition()` models whether each prior-wave unit stayed in the next wave.
-It returns inverse-retention weights for retained units only. The result is a
-`wf_weights` subclass, so it can be composed with later calibration stages.
-
-```{r}
-library(WFC)
-
-panel <- data.frame(
-  id = paste0("p", 1:12),
-  region = rep(c("A", "B"), each = 6),
-  retained = c(TRUE, TRUE, TRUE, FALSE, FALSE, FALSE,
-               TRUE, TRUE, FALSE, TRUE, FALSE, FALSE),
-  age = c(25, 35, 45, 55, 65, 75, 24, 34, 44, 54, 64, 74),
-  sex = rep(c("female", "male"), 6)
-)
-
-attrition <- wf_attrition(
-  panel,
-  retained = "retained",
-  formula = ~ age + sex,
-  id = "id",
-  by = "region",
-  trim = 3
-)
-
-attrition
-head(attrition$balance)
-```
-
-The `$balance` table compares retained units with the full prior wave before
-and after inverse-retention weighting. `wf_report()` carries those diagnostics
-as attrition-specific sections.
-
-```{r}
-names(wf_report(attrition)$sections)
-```
-
-## Review high-influence units
-
-`wf_influence()` ranks units by their weight ratio to the group mean and their
-share of squared-weight mass. For the top units, it recomputes the group design
-effect after dropping the unit. When sample and target data are provided, it
-also reports the largest target-margin share represented by that respondent.
-
-```{r}
-data("wfc_example", package = "WFC")
-
-target <- wf_target_population(
-  wfc_example$population,
-  key_map = c(gender = "gender", age = "age"),
-  count = "count",
-  dims = wfc_example$dims,
-  by = "province"
-)
-weights <- wf_rake(wfc_example$sample, target, id = "id")
-
+```{r influence, eval=FALSE}
 influence <- wf_influence(
-  weights,
+  locked,
   target = target,
-  sample = wfc_example$sample,
-  id = "id",
-  top = 5
+  sample = design$data,
+  id = design$roles$id,
+  top = 20
 )
 
-influence
+influence$table
 ```
 
-Use the table before trimming or category-collapse decisions. It identifies
-which individual weights are driving design-effect pressure and which target
-margins they dominate.
+If panel-retention weights are studied, keep their formula, stabilization, trim
+settings, and balance diagnostics as a separate sensitivity analysis. Do not
+select those settings to make an outcome cross a preferred threshold.
 
-## Use Fay's BRR
-
-For BRR designs, `rho` switches from standard half-sample BRR to Fay's BRR.
-`rho = 0` is the default and reproduces the original WFC behavior.
-
-```{r}
-design_data <- data.frame(
-  id = paste0("u", 1:8),
-  stratum = c("A", "A", "A", "A", "B", "B", "B", "B"),
-  psu = c("a1", "a1", "a2", "a2", "b1", "b1", "b2", "b2"),
-  y = c(1, 0, 1, 1, 0, 0, 1, 0)
+```{r impact, eval=FALSE}
+impact <- wf_assess_impact(
+  locked,
+  analysis_data,
+  id = "person_id",
+  outcomes = c("score", "approved")
 )
 
-refit <- function(data, weights) {
-  structure(
-    list(
-      data = data.frame(
-        id = data$id,
-        group = "all",
-        weight = weights,
-        feature = 1 / weights
-      )
-    ),
-    class = "wf_weights"
-  )
-}
-
-fay <- wf_replicates(
-  design_data,
-  refit,
-  method = "brr",
-  strata = "stratum",
-  clusters = "psu",
-  id = "id",
-  rho = 0.3
-)
-
-fay
-wf_variance(fay, function(w, data) sum(w * data$y) / sum(w), design_data)
+wf_report(impact, audience = "statistician")
 ```
-
-The stored scale uses the Fay adjustment, so downstream `wf_variance()` and
-`as_svrepdesign()` consume the same replicate metadata.

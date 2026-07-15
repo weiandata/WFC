@@ -213,7 +213,7 @@ test_that("wf_propensity weights feed wf_poststrat as init_weight", {
 
   # propensity weights are in online (== sample) row order
   fixture$sample$pw <- pw$data$weight
-  weights <- wf_poststrat(
+  weights <- .wf_poststrat_engine(
     fixture$sample,
     fixture$target,
     min_cell = 2,

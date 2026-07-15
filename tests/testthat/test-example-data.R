@@ -24,7 +24,7 @@ test_that("wfc_example supports the documented raking quick start", {
   check <- wf_precheck(wfc_example$sample, target, id = "id")
   expect_true(check$ok)
 
-  weights <- wf_rake(wfc_example$sample, target, id = "id")
+  weights <- .wf_rake_engine(wfc_example$sample, target, id = "id")
   expect_true(all(weights$log$converged))
   expect_true(all(weights$data$weight > 0))
 })

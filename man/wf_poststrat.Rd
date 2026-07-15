@@ -2,56 +2,26 @@
 % Please edit documentation in R/poststrat.R
 \name{wf_poststrat}
 \alias{wf_poststrat}
-\title{Run cell-level post-stratification}
+\title{Post-stratify verified design data to a verified joint target}
 \usage{
-wf_poststrat(
-  sample,
-  target,
-  min_cell,
-  ladder,
-  init_weight = NULL,
-  granularity = c("adaptive", "province"),
-  empty_cell = c("redistribute", "flag", "error"),
-  id = NULL,
-  precheck = TRUE,
-  tol = 1e-08,
-  parallel = FALSE,
-  progress = FALSE
-)
+wf_poststrat(design, target, min_cell, ladder, ...)
 }
 \arguments{
-\item{sample}{Sample data frame.}
+\item{design}{An unchanged \code{wf_design_data}.}
 
-\item{target}{A \code{wf_target} object with joint cells.}
+\item{target}{An unchanged, non-demo \code{wf_verified_target} with joint cells.}
 
 \item{min_cell}{Minimum sample count per resolved cell.}
 
 \item{ladder}{A \code{wf_collapse_ladder} object.}
 
-\item{init_weight}{Optional initial weight column. If \code{NULL}, all initial
-weights are one.}
-
-\item{granularity}{Resolution strategy, either \code{"adaptive"} or \code{"province"}.}
-
-\item{empty_cell}{Empty-cell policy, one of \code{"redistribute"}, \code{"flag"}, or
-\code{"error"}.}
-
-\item{id}{Optional unique unit identifier column.}
-
-\item{precheck}{Reserved for the workflow contract; validation always runs.}
-
-\item{tol}{Relative tolerance for enforced group-total checks.}
-
-\item{parallel}{Whether to process independent target groups with forked
-parallelism where available, using at most two workers. Windows falls back
-to serial execution.}
-
-\item{progress}{Whether to show a \code{cli} progress bar when \code{cli} is installed.}
+\item{...}{Post-stratification settings other than ID and base-weight roles,
+which are owned by \code{design}.}
 }
 \value{
 A \code{wf_weights} object with \code{cell_report} and \code{collapse_map}.
 }
 \description{
-Applies calibration-style post-stratification to a sample using a joint-cell
-population target built with \code{wf_target_population(..., keep_joint = TRUE)}.
+Enforces the WFC 2.0 verified-input boundary before cell-level
+post-stratification.
 }

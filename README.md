@@ -1,619 +1,307 @@
 # WFC
 
-<!-- badges: start -->
-[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
-[![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
-[![License: GPL >= 2](https://img.shields.io/badge/license-GPL%20%3E%3D%202-blue.svg)](LICENSE)
-[![R >= 3.6.0](https://img.shields.io/badge/R-%3E%3D%203.6.0-blue.svg)](https://cran.r-project.org/)
-<!-- badges: end -->
+WFC is an R package for reviewable survey weighting. Version 2.0 makes one
+rule non-optional: weights may be built only from declared design variables and
+an independently sourced, verified target. Study outcomes enter only after the
+weights are locked.
 
-**English** | [Simplified Chinese](README.zh-CN.md)
+This design serves two kinds of users:
 
-Status: Active
+- survey researchers get a guided sequence with plain-language stops and next
+  actions; and
+- statistical teams and AI agents get stable objects, identities, condition
+  codes, and complete audit fields.
 
-Owner: WEIAN DATA Engineering
+The same result can be shown as a short decision view or a detailed statistical
+view. The two views come from one object and must agree.
 
-`WFC` is a workflow-oriented R package for survey weighting and raking. It
-emphasizes a disciplined **precheck → execute → diagnose** loop for multi-source
-survey calibration, with schema-agnostic dimensions and canonical target objects
-that stay consistent across raking and post-stratification engines.
+## What WFC 2.0 prevents
 
-## Why WFC
+Public weighting functions reject raw data frames, ordinary target objects,
+demo targets, changed identities, self-approval by an agent, and runtime
+changes to ID or base-weight roles. Manual targets, target shrinkage, inline
+target moments, manual pipeline modes, and runtime margin injection are not
+supported.
 
-Most weighting scripts fail silently: a category is missing from the target, a
-cell is too thin to estimate, or a group total drifts after trimming. `WFC`
-turns those failure modes into first-class, reviewable steps.
-
-- **Precheck before you calibrate.** `wf_precheck()` compares the sample against
-  the target and reports incompatibilities before any weights are computed.
-- **One target contract, many sources.** Build a canonical `wf_target` from
-  external population data, a weighted reference sample, or a manual margin table.
-- **Reviewable category collapsing.** Declare a collapse ladder up front, get
-  suggested merges from precheck findings, and apply them consistently to both
-  sample and target.
-- **Raking and post-stratification behind one dispatcher.** `wf_calibrate()`
-  returns the same `wf_weights` contract regardless of method.
-- **Diagnostics as a habit.** `wf_diagnose()` closes every workflow with weight
-  and margin diagnostics.
+These controls reduce accidental and ordinary misuse. They cannot prove that a
+source document is truthful or stop a determined person from editing open
+source code. Accountable human review remains necessary.
 
 ## Installation
 
 Install the development version from GitHub:
 
 ```r
-# install.packages("remotes")
 remotes::install_github("weiandata/WFC")
 ```
 
-Or build from a source tarball:
+## Files used by the safe workflow
 
-```r
-install.packages("WFC_1.1.0.tar.gz", repos = NULL, type = "source")
-```
+A production run normally starts with four files:
 
-## Workflow at a glance
+1. a design-only survey table containing IDs, calibration fields, and declared
+   sampling-design fields;
+2. a separate analysis table containing study outcomes;
+3. a CSV or Excel target table from an external authority; and
+4. a companion `.source.dcf` evidence record for that target table.
 
-```text
-declare dims ──► build target ──► precheck ──► (collapse) ──► calibrate ──► diagnose
-   wf_dims()      wf_target_*()   wf_precheck()  wf_suggest_    wf_rake() /   wf_diagnose()
-                                                 collapse()     wf_poststrat()
-                                                 wf_apply_      wf_calibrate()
-                                                 collapse()
-```
-
-## Quick start
+Use `wf_target_template()` if the target-table layout is unfamiliar:
 
 ```r
 library(WFC)
 
-data(wfc_example)
-
-dims <- wfc_example$dims
-target <- wf_target_population(
-  pop = wfc_example$population,
-  key_map = c(gender = "gender", age = "age"),
-  count = "count",
-  dims = dims,
-  by = "province"
+dims <- wf_dims(
+  age_group = c("18-34", "35-54", "55+"),
+  region = c("north", "south")
 )
 
-precheck <- wf_precheck(wfc_example$sample, target, id = "id")
-precheck
-
-weights <- wf_rake(wfc_example$sample, target, id = "id")
-wf_diagnose(weights, target = target)
+wf_target_template(
+  "population-margins-template.csv",
+  dims = dims
+)
 ```
+
+The template creates the data file and its companion DCF form. Complete the
+source fields, update the checksum after the data file is final, and obtain the
+file before inspecting study outcomes.
+
+WFC also installs synthetic format examples named `safe-target-example.csv`,
+`safe-target-example.xlsx`, and their separate `.source.dcf` files. They are
+marked demo-only and cannot enter production planning.
 
 <!-- SAFE_WORKFLOW_START -->
-## Verified, outcome-blind workflow (WFC 1.1)
 
-Use this workflow when weights may affect research findings. Planning receives
-only identifiers, sampling-design fields, and declared calibration variables.
-Study outcomes stay in a separate table until the weights are locked. Targets
-must come from an external CSV or Excel file plus its own `.source.dcf` evidence
-record; the recorded SHA-256 must match the data file.
+## Complete controlled workflow
 
-The package contains matching synthetic import examples:
-
-- `safe-target-example.csv` with `safe-target-example.csv.source.dcf`
-- `safe-target-example.xlsx` with `safe-target-example.xlsx.source.dcf`
-
-They are marked `demo_only: true`, so examples require `production = FALSE` and
-cannot be mistaken for authoritative production targets.
+### 1. Prepare outcome-free design data
 
 ```r
 library(WFC)
 
-dims_safe <- wf_dims(
-  sex = c("F", "M"),
-  age = c("18-34", "35+")
-)
-design_frame <- data.frame(
-  id = sprintf("r%02d", 1:16),
-  sex = rep(c("F", "M"), 8),
-  age = rep(c("18-34", "18-34", "35+", "35+"), 4),
-  base_weight = 1
-)
-analysis_frame <- data.frame(
-  id = design_frame$id,
-  satisfaction = seq(40, 70, length.out = 16)
+dims <- wf_dims(
+  age_group = c("18-34", "35-54", "55+"),
+  region = c("north", "south")
 )
 
-# 1. Prepare design-only data. Any undeclared column blocks here.
+design_only <- read.csv("survey-design.csv")
+analysis_data <- read.csv("survey-outcomes.csv")
+
 design <- wf_prepare_design(
-  design_frame,
-  id = "id",
-  calibration = c("sex", "age"),
+  design_only,
+  id = "person_id",
+  calibration = c("age_group", "region"),
   base_weight = "base_weight"
 )
+```
 
-# 2. Import the target and its companion evidence record.
-target_file <- system.file(
-  "extdata", "safe-target-example.csv", package = "WFC"
+Every column in `design_only` must have a declared design role. Keep outcomes
+such as satisfaction, vote choice, approval, score, or pass/fail in
+`analysis_data`.
+
+### 2. Import an external target and its evidence
+
+Population-count target:
+
+```r
+target <- wf_import_target(
+  data_file = "population-margins.csv",
+  source_file = "population-margins.csv.source.dcf",
+  dims = dims,
+  key_map = c(age_group = "age_group", region = "region"),
+  count = "population_count",
+  production = TRUE
 )
-source_file <- paste0(target_file, ".source.dcf")
-target_verified <- wf_import_target(
-  target_file,
-  source_file,
-  dims_safe,
-  key_map = c(sex = "sex", age = "age"),
-  count = "count",
-  production = FALSE
+```
+
+Independent reference-sample target:
+
+```r
+reference_target <- wf_import_reference(
+  data_file = "reference-sample.csv",
+  source_file = "reference-sample.csv.source.dcf",
+  dims = dims,
+  feature = "reference_weight",
+  production = TRUE
+)
+```
+
+Import verifies source completeness, declared selection timing, demo status,
+and the SHA-256 checksum. It does not decide whether the source is scientifically
+appropriate; that remains part of human review.
+
+### 3. Plan without seeing outcomes
+
+```r
+cell_plan <- wf_plan_cells(
+  design,
+  target,
+  dims,
+  min_cell = 5,
+  max_weight_ratio = 4
 )
 
-# The Excel form is identical apart from its file-specific checksum.
-xlsx_file <- system.file(
-  "extdata", "safe-target-example.xlsx", package = "WFC"
-)
-if (requireNamespace("openxlsx", quietly = TRUE)) {
-  target_from_excel <- wf_import_target(
-    xlsx_file,
-    paste0(xlsx_file, ".source.dcf"),
-    dims_safe,
-    key_map = c(sex = "sex", age = "age"),
-    count = "count",
-    production = FALSE
-  )
-}
-
-# 3. Plan cells and weights. No weights are computed in either call.
-# Replace the bundled demo paths with a completed authoritative source first;
-# demo_only targets are intentionally refused by planning.
-cell_plan <- wf_plan_cells(design, target_verified, dims_safe)
 plan <- wf_plan_weights(
   design,
-  target_verified,
-  dims_safe,
+  target,
+  dims,
   method = "raking",
+  bounds = c(0.3, 3),
+  min_cell = 5,
   cell_plan = cell_plan
 )
-plan$precheck
 
-# 4. A human reviewer performs approval as a separate action.
-approval <- wf_approve_plan(plan, "Reviewer name", "statistician")
+plan$ready
+plan$issues
+is.null(plan$weights)
+```
 
-# 5. Execute exactly the approved plan and lock its weights.
-locked <- wf_execute_plan(plan, approval, design, target_verified)
+Planning does not calculate weights. It records the exact inputs, checks,
+method, limits, and any deterministic category merge for review.
 
-# 6. Attach by exact ID, then assess outcomes without recalculating weights.
-analysis_ready <- wf_attach_weights(analysis_frame, locked, id = "id")
+### 4. Obtain separate human approval
+
+```r
+approval <- wf_approve_plan(
+  plan,
+  approver = "Qualified reviewer full name",
+  role = "Statistician",
+  note = "Reviewed source, support, method, limits, and intended use"
+)
+```
+
+An AI agent may prepare the plan but may not create this attestation for itself.
+The name and role must identify the actual human reviewer.
+
+### 5. Execute the unchanged plan once
+
+```r
+locked <- wf_execute_plan(
+  plan,
+  approval,
+  design,
+  target
+)
+```
+
+Changing the design, target, plan, or approval breaks the identity chain and
+stops execution.
+
+### 6. Attach outcomes after weight locking
+
+```r
+analysis_ready <- wf_attach_weights(
+  analysis_data,
+  locked,
+  id = "person_id",
+  weight_name = ".weight"
+)
+
 impact <- wf_assess_impact(
   locked,
-  analysis_frame,
-  id = "id",
-  outcomes = "satisfaction"
+  analysis_data,
+  id = "person_id",
+  outcomes = c("satisfaction", "approved")
 )
-
-# 7. Use a compact decision view or the complete statistician view.
-wf_report(locked, audience = "decision")
-wf_report(impact, audience = "statistician")
-wf_audit_export(impact, tempfile(fileext = ".json"))
 ```
 
-For a shorter practitioner entry point, `wf_guided_plan()` composes preparation,
-verified import, cell planning, and weight planning, but still stops before
-approval and execution. It does not inspect outcomes.
+Impact assessment describes what the already locked weights change. It cannot
+re-plan, reapprove, or overwrite the weights.
 
-The bundled files demonstrate import layout only. The planning and execution
-lines become runnable after `target_file` and `source_file` point to a completed,
-authoritative external source imported with the default `production = TRUE`.
+### 7. Produce views for different readers
 
-AI Agents should use the stable condition payload in `wf_error_safety`, including
-`code`, `severity`, `field`, `evidence`, and `next_actions`. Agent operation is
-non-interactive: report the payload and request the stated human action. An Agent
-must not self-approve; `wf_approve_plan(plan, "Agent", "assistant", actor_type = "agent")`
-is refused. There are no force, bypass, ignore-source, auto-approve, auto-relax,
-auto-widen, or silent method-switch flags.
+```r
+decision_view <- wf_report(
+  locked,
+  audience = "decision"
+)
+
+statistical_view <- wf_report(
+  locked,
+  audience = "statistician"
+)
+
+impact_detail <- wf_report(
+  impact,
+  audience = "statistician"
+)
+
+wf_audit_export(locked, "weighting-audit.json")
+```
+
+The decision view emphasizes status, main risks, and next actions. The
+statistical view exposes full tables, convergence information, identities, and
+provenance for further analysis.
+
 <!-- SAFE_WORKFLOW_END -->
 
-## Guided workflow and localized output
+## Direct functions for statistical users
 
-WFC includes a one-call path over the same public constructors, precheck,
-calibration engines, diagnostics, and reports. It never bypasses a blocking
-precheck: automatic remediation is limited to collapse maps already declared in
-`wf_dims()`, and every decision is recorded with stable machine-readable keys.
+Advanced users may call `wf_calibrate()`, `wf_rake()`, `wf_poststrat()`,
+`wf_auto_trim()`, or `wf_autoweigh()` directly, but their first inputs must
+still be the unchanged `design` and `target` objects:
 
 ```r
-guided <- wf_autoweigh(
-  sample = wfc_example$sample,
-  population = wfc_example$population,
-  dims = dims,
-  key_map = c(gender = "gender", age = "age"),
-  count = "count",
-  by = "province",
-  id = "id",
-  interactive = FALSE
+raked <- wf_rake(design, target, tol = 1e-8)
+
+bounded <- wf_calibrate(
+  design,
+  target,
+  method = "logit",
+  bounds = c(0.3, 3)
 )
 
-guided$weights
-guided$ledger[c("step", "action", "detail_key", "detail")]
-```
-
-`method = "auto"` uses post-stratification only when both a reviewed `ladder`
-and `min_cell` are supplied; otherwise it uses raking. It never selects bounded
-logit calibration automatically. Use `interactive = TRUE` when declared
-collapses and finite trim recommendations should require confirmation.
-
-Human-facing reports, guided narration, and plot labels support English and
-Simplified Chinese. Stable object fields, condition classes, and ledger keys
-remain English.
-
-```r
-wf_report(guided$weights, guided$target, lang = "zh_CN")
-plot(guided$diagnostics, lang = "zh_CN")
-
-options(wfc.lang = "zh_CN")
-# Explicit `lang` overrides this option; an unrecognized session locale falls
-# back to English.
-```
-
-See `vignette("guided-workflow", package = "WFC")` for method routing,
-decision-ledger review, and automation boundaries.
-
-## Ecosystem interoperability
-
-WFC converts results into standard survey-package designs after a
-strict, order-independent ID join. Suggested packages remain optional: WFC can
-still be installed and loaded with only its base-R imports.
-
-```r
-analysis <- wfc_example$sample
-analysis$outcome <- as.numeric(analysis$age == "young")
-
-survey_design <- as_svydesign(
-  guided$weights,
-  analysis,
-  id = "id"
-)
-survey::svymean(~outcome, survey_design)
-```
-
-`as_svrepdesign()` converts `wf_replicate_weights` to a standard
-`svyrep.design`, preserving bootstrap, JK1/JKn, or BRR scales and reproducing
-`wf_variance()` uncertainty. Because both outputs are ordinary survey objects,
-an installed srvyr package can wrap them directly with
-`srvyr::as_survey(survey_design)`.
-
-Broom-style projections are conditionally registered against the suggested
-`generics` package and return base data frames:
-
-```r
-generics::tidy(guided$weights)                    # unit-level weights
-generics::glance(guided$diagnostics)              # one-row quality summary
-augmented <- generics::augment(
-  guided$weights,
-  data = analysis,
-  id = "id"
+trim_review <- wf_auto_trim(
+  design,
+  target,
+  caps = c(2, 4, 6, 8)
 )
 ```
 
-All bridges and augmenters require unique, identical unit-ID sets. They never
-silently discard unmatched rows. See
-`vignette("ecosystem-interoperability", package = "WFC")` for replicate
-variance equivalence and supported result projections.
+ID and base-weight columns come from `wf_prepare_design()` and cannot be
+overridden at this stage.
 
-## Post-stratification
+## AI agent integration
 
-Post-stratification uses joint population cells instead of marginal totals. Build
-the target with `keep_joint = TRUE`, declare a reviewable collapse ladder, then
-plan and execute the cell calibration.
+An agent should preserve whole WFC objects and their identities. A minimal
+handoff object can be prepared like this:
 
 ```r
-target_joint <- wf_target_population(
-  pop = wfc_example$population,
-  key_map = c(gender = "gender", age = "age"),
-  count = "count",
-  dims = dims,
-  by = "province",
-  keep_joint = TRUE
+handoff <- list(
+  plan = plan,
+  plan_identity = plan$identity,
+  design_identity = design$identity,
+  target_identity = target$identity,
+  required_human_action = "Review and approve the unchanged plan"
 )
-
-ladder <- wf_collapse_ladder(
-  dims,
-  level1 = list(age = c(young = "all", old = "all"))
-)
-
-plan <- wf_plan_poststrat(
-  wfc_example$sample,
-  target_joint,
-  min_cell = 2,
-  ladder = ladder
-)
-plan
-
-post <- wf_poststrat(
-  wfc_example$sample,
-  target_joint,
-  min_cell = 2,
-  ladder = ladder,
-  id = "id"
-)
-wf_diagnose(post)
 ```
 
-## Foundation API
-
-Manual margins can be converted directly to a target and calibrated through the
-unified dispatcher. A target can also be shrunk toward a reference target before
-calibration.
+If an agent attempts approval, WFC returns `wf_error_safety`. Agents should read
+the stable payload and stop:
 
 ```r
-manual <- data.frame(
-  dimension = c("gender", "gender", "age", "age"),
-  category = c("female", "male", "young", "old"),
-  value = c(55, 45, 60, 40)
-)
-
-target_manual <- wf_target_manual(manual, dims)
-weights_manual <- wf_calibrate(
-  wfc_example$sample,
-  target_manual,
-  method = "raking",
-  id = "id"
-)
-wf_diagnose(weights_manual)
-```
-
-## Pipeline Ledger
-
-Multiple weighting stages can be composed into one auditable `wf_weights` object.
-Composition matches units by ID, multiplies stage weights, and stores each stage
-in provenance.
-
-```r
-calibration <- wf_rake(wfc_example$sample, target, id = "id")
-
-adjustment <- calibration
-adjustment$data$weight <- rep(c(0.9, 1.1), length.out = nrow(adjustment$data))
-adjustment$data$feature <- 1 / adjustment$data$weight
-adjustment$provenance$method <- "nonresponse_adjustment_example"
-
-final_weights <- wf_compose(adjustment, calibration, normalize = "mean1")
-wf_diagnose(final_weights)
-```
-
-## Dual-Source Fusion
-
-Online and offline calibrated sources can be fused at the estimator level with
-`wf_blend()`. The function computes each source's cell estimate first, then
-combines those estimates with the applied lambda recorded in the result.
-
-```r
-online <- wf_rake(wfc_example$sample, target, id = "id")
-offline <- online
-
-analysis_cols <- wfc_example$sample[c("id", "gender", "age")]
-online$data <- merge(online$data, analysis_cols, by = "id", all.x = TRUE, sort = FALSE)
-offline$data <- merge(offline$data, analysis_cols, by = "id", all.x = TRUE, sort = FALSE)
-
-online$data$cell <- online$data$gender
-offline$data$cell <- offline$data$gender
-online$data$outcome <- as.numeric(online$data$age == "young")
-offline$data$outcome <- as.numeric(offline$data$age == "young")
-
-blend <- wf_blend(
-  online,
-  offline,
-  by_cell = "cell",
-  outcome = "outcome",
-  lambda = "neff"
-)
-
-blend$estimates
-blend$lambda
-```
-
-## Non-Probability Correction
-
-A self-selected online sample can be corrected against an offline probability
-reference by modelling its selection propensity. `wf_target_propensity()` stacks
-the two samples into a membership-model specification; `wf_propensity()` fits a
-base-R logistic model and emits inverse-propensity pseudo-design weights (a
-`wf_weights` stage) that feed calibration as `init_weight` and compose via
-`wf_compose()`. Overlap and covariate-balance diagnostics are attached, and poor
-common support raises a `wf_warning_quality`.
-
-```r
-target <- wf_target_propensity(online, reference, member ~ gender + age)
-stage1 <- wf_propensity(target, stabilize = TRUE)
-
-stage1$overlap    # common-support report
-stage1$balance    # covariate SMDs, unweighted vs pseudo-weighted
-
-online$pw <- stage1$data$weight
-calibrated <- wf_poststrat(online, pop_target, min_cell = 20, ladder = ladder,
-                           init_weight = "pw", id = "id")
-```
-
-## Variance & Uncertainty
-
-Any weighted estimate can carry a standard error and confidence interval that
-include calibration uncertainty, via replicate weights. `wf_replicates()`
-perturbs base weights (Rao-Wu bootstrap, jackknife, or BRR) and re-runs the
-calibration pipeline on each replicate through a `refit` closure;
-`wf_variance()` combines them with an estimator into an estimate, SE, and CI.
-
-```r
-refit <- function(data, weights) {
-  data$.bw <- weights
-  wf_rake(data, target, id = "id", init_weight = ".bw")
-}
-
-reps <- wf_replicates(sample, refit, method = "bootstrap", R = 500,
-                      strata = "stratum", clusters = "psu", id = "id",
-                      seed = 1)
-wf_variance(reps, function(w, d) sum(w * d$y) / sum(w), sample)
-```
-
-## Bounded Calibration
-
-`wf_calibrate()` also offers general calibration beyond raking and
-post-stratification. `method = "greg"` is the linear GREG estimator;
-`method = "logit"` produces weights bounded within `bounds = c(L, U)` by
-construction, merging margin alignment and weight trimming into one step.
-`method = "soft"` allows declared, audited margin relaxation, and
-`method = "ebal"` performs entropy balancing for exact moment matching.
-
-```r
-# weights bounded between 0.3x and 3x the base weight
-w <- wf_calibrate(sample, target, method = "logit", bounds = c(0.3, 3),
-                  init_weight = "design_w", id = "id")
-w$log   # per-group convergence and realized weight-ratio range
-```
-
-## Production and performance
-
-Recurring production rounds can be declared as serializable pipelines and
-validated against a reference release. Audit exports write dependency-free JSON
-records with provenance, input hashes, and user metadata.
-
-```r
-spec <- wf_pipeline(
-  target = list(
-    mode = "population",
-    key_map = c(gender = "gender", age = "age"),
-    count = "count",
-    by = "province"
+refusal <- tryCatch(
+  wf_approve_plan(
+    plan,
+    approver = "Automated agent",
+    role = "assistant",
+    actor_type = "agent"
   ),
-  stages = list(calibrate = list(method = "raking", id = "id")),
-  validate = list(max_deff = 6, max_margin_dev = 0.01)
+  wf_error_safety = function(condition) condition$data
 )
 
-round1 <- wf_run(spec, wfc_example$sample, dims = dims,
-                 population = wfc_example$population)
-wf_validate(round1, weights, target = target)
+refusal[c("code", "severity", "field", "next_actions")]
 ```
 
-Long grouped calibrations and replicate refits support opt-in fork parallelism
-(capped at two workers for CRAN compliance) and optional `cli` progress bars:
+Do not edit identities, manufacture a human name, widen limits, switch targets,
+or retry after viewing outcomes.
 
-```r
-weights_parallel <- wf_rake(
-  wfc_example$sample,
-  target,
-  id = "id",
-  parallel = TRUE,
-  progress = TRUE
-)
-```
+## Migration from WFC 1.x
 
-## Usability foundations
-
-The lower-level 0.10 review and communication tools remain available for expert
-workflows.
-`wf_auto_trim()` recommends rather than applies a cap; `wf_suggest_ladder()`
-returns a draft and a validated ladder for explicit review; `wf_report()` turns
-the structured diagnostics into manager or analyst output.
-
-```r
-trim_advice <- wf_auto_trim(
-  wfc_example$sample,
-  target,
-  id = "id",
-  caps = c(2, 4, 8)
-)
-trim_advice
-plot(trim_advice)
-
-report <- wf_report(weights, target, audience = "manager")
-report
-
-ladder_draft <- wf_suggest_ladder(
-  wfc_example$sample,
-  target,
-  dims,
-  min_cell = 25
-)
-ladder_draft
-# After review, use ladder_draft$ladder where a post-strat ladder is required.
-```
-
-Base `plot()` methods are also available for `wf_weights`, `wf_diagnostics`,
-`wf_blend_result`, and propensity-weight results, with `lang` controlling
-human-facing labels.
-
-## Function reference
-
-| Stage | Function | Purpose |
-| --- | --- | --- |
-| Guided | `wf_autoweigh()` | Run target construction, precheck, declared remediation, calibration, diagnosis, reporting, and decision logging. |
-| Bridge | `as_svydesign()` | Convert calibrated weights to a standard survey design by exact ID. |
-| Bridge | `as_svrepdesign()` | Convert WFC replicate weights to a survey replicate design with equivalent uncertainty. |
-| Tidy | `generics::tidy()` / `glance()` / `augment()` | Project WFC results into stable base data frames and join weights back to analysis data. |
-| Dimensions | `wf_dims()` | Declare calibration dimensions and optional collapse ladders. |
-| Target | `wf_target_population()` | Build a canonical target from external population data. |
-| Target | `wf_target_reference()` | Build a target from a weighted reference sample. |
-| Target | `wf_target_manual()` | Build a target from a manual long margin table. |
-| Target | `wf_target_shrink()` | Shrink a target toward a reference target. |
-| Precheck | `wf_precheck()` | Check sample/target compatibility before calibration. |
-| Collapse | `wf_collapse_ladder()` | Declare a post-stratification collapse ladder. |
-| Collapse | `wf_suggest_collapse()` | Suggest collapse plans from precheck findings. |
-| Collapse | `wf_suggest_ladder()` | Draft a reviewable post-stratification ladder from sparse support. |
-| Collapse | `wf_apply_collapse()` | Apply a collapse plan to sample and target. |
-| Calibrate | `wf_calibrate()` | Dispatch to a calibration method (raking, post-strat, greg, or logit). |
-| Calibrate | `wf_calibrate(method = "greg"/"logit"/"soft"/"ebal")` | Linear GREG, bounded logit, soft calibration, or entropy balancing. |
-| Calibrate | `wf_rake()` | Grouped raking (iterative proportional fitting). |
-| Calibrate | `wf_plan_poststrat()` | Plan post-stratification cell resolution. |
-| Calibrate | `wf_poststrat()` | Run cell-level post-stratification. |
-| Production | `wf_pipeline()` | Declare a serializable weighting round. |
-| Production | `wf_run()` | Execute a declared pipeline. |
-| Production | `wf_validate()` | Check weight drift against a reference release. |
-| Production | `wf_audit_export()` | Write a JSON audit record. |
-| Compose | `wf_compose()` | Compose multiple weighting stages into one auditable result. |
-| Fusion | `wf_blend()` | Fuse online and offline estimates at the estimator level. |
-| Propensity | `wf_target_propensity()` | Stack an online sample and a probability reference into a membership-model spec. |
-| Propensity | `wf_propensity()` | Emit inverse-propensity pseudo-design weights with overlap and balance diagnostics. |
-| Attrition | `wf_attrition()` | Estimate inverse-retention weights for panel nonresponse. |
-| Influence | `wf_influence()` | Rank high-influence units for trimming and review. |
-| Variance | `wf_replicates()` | Generate re-calibrated bootstrap/jackknife/BRR replicate weights. |
-| Variance | `wf_variance()` | Combine replicate weights and an estimator into an estimate, SE, and CI. |
-| Recommend | `wf_auto_trim()` | Recommend a trim cap from the bias-variance frontier. |
-| Diagnose | `wf_diagnose()` | Diagnose calibrated weights and margins. |
-| Report | `wf_report()` | Build manager/analyst quality dossiers in object, Markdown, or HTML form. |
-| Visualize | `plot()` | Plot weights, diagnostics, trim frontiers, blend sensitivity, or propensity quality. |
-
-All exported functions ship with full documentation. From R, use `?wf_rake`,
-`help(package = "WFC")`, or `example(wf_target_population)`.
-
-## Data policy
-
-Private source spreadsheets and RData files under `private-data/` are **not
-committed** and are **not** included in package builds. All examples and tests use
-the simulated `wfc_example` dataset, generated by
-`data-raw/make-wfc-example.R`.
-
-## Project status
-
-Version 1.0.0 freezes the public API for the WFC core. The stable scope now
-includes raking, post-stratification, manual targets and shrinkage, collapse
-planning, weight composition, dual-source fusion, propensity and attrition
-correction, replicate-weight variance, bounded calibration, soft calibration,
-entropy balancing, production pipelines, drift validation, audit exports,
-quality reports, trim recommendations, ladder drafts, diagnostic plots,
-survey/srvyr bridges, broom-style projections, bilingual human-facing output,
-and opt-in parallel execution. The package was renamed from `weightflow` to
-`WFC` at 0.9.0 after a CRAN name collision. See [`NEWS.md`](NEWS.md) for the
-full changelog and `inst/stability/api-freeze.md` for the 1.0 compatibility
-contract.
-
-Design documents live in [`inst/design/`](inst/design/): the core design, the
-post-stratification and roadmap extensions, and
-[`wfc_future_design.md`](inst/design/wfc_future_design.md) — the 0.10 → 1.0
-roadmap (guided workflow, ecosystem bridges, production infrastructure, soft
-calibration). Reference prototypes for the roadmap live in
-[`inst/reference/`](inst/reference/).
-
-## Contributing
-
-Contributions are welcome. Please read
-[`CONTRIBUTING.md`](CONTRIBUTING.md) for development setup, the
-test-driven workflow, and the language policy, and review the
-[Code of Conduct](.github/CODE_OF_CONDUCT.md) before opening an issue or pull
-request. Repository conventions for automated agents are documented in
-[`AGENTS.md`](AGENTS.md).
+See [Migrating from WFC 1.x to WFC 2.0](docs/migration/wfc-1-to-2.md). Behavior
+that selected desired results has no compatibility switch and no supported
+replacement.
 
 ## License
 
-Released under the [GNU General Public License version 2 or later](LICENSE).
-Copyright © 2026 WEIAN DATA TECH (Beijing) Co., Ltd. Dependency copyrights and
-license boundaries are documented in [`inst/COPYRIGHTS`](inst/COPYRIGHTS).
+WFC is licensed under GPL (>= 2). Copyright and contributor information are in
+`inst/COPYRIGHTS` and `DESCRIPTION`.

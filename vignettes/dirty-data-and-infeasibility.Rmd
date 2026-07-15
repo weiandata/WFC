@@ -1,8 +1,8 @@
 ---
-title: "Dirty data, missing values, and infeasibility"
+title: "Dirty data and safe infeasibility handling"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Dirty data, missing values, and infeasibility}
+  %\VignetteIndexEntry{Dirty data and safe infeasibility handling}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -11,94 +11,38 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-WFC separates fixable data quality warnings from mathematical infeasibility.
-The precheck identifies the group, dimension, and category before any
-calibration iteration begins.
+WFC stops early when design roles, source evidence, checksums, categories, or
+sample support are inconsistent. A stop is evidence to repair or review the
+inputs, not permission to choose a more convenient target.
 
-```{r}
-library(WFC)
-data("wfc_example", package = "WFC")
+Common safe responses are:
 
-sample <- wfc_example$sample
-population <- wfc_example$population
-```
+- remove outcome or undeclared columns before `wf_prepare_design()`;
+- correct a target file and update its evidence checksum;
+- reconcile category spelling against `wf_dims()`;
+- document a deterministic support-based merge with `wf_plan_cells()`; or
+- conclude that the requested calibration is not feasible.
 
-## Unknown categories are blocking schema problems
-
-```{r}
-target <- wf_target_population(
-  population,
-  key_map = c(gender = "gender", age = "age"),
-  count = "count",
-  dims = wfc_example$dims,
-  by = "province"
+```{r checks, eval=FALSE}
+design <- wf_prepare_design(
+  design_only,
+  id = "person_id",
+  calibration = c("age_group", "region"),
+  base_weight = "base_weight"
 )
 
-unknown <- sample
-unknown$gender[1] <- "not-in-target"
-unknown_check <- wf_precheck(unknown, target, id = "id")
-unknown_check$issues[
-  unknown_check$issues$check == "cat_unknown_in_sample",
-  c("group", "dim", "category", "severity", "detail")
-]
-```
-
-Recode the source value or rebuild the target. WFC does not silently drop the
-row or invent a target share.
-
-## Missing values require an explicit policy
-
-```{r}
-with_na <- sample
-with_na$age[1] <- NA
-
-fractional_check <- wf_precheck(with_na, target, id = "id", na = "fractional")
-drop_check <- wf_precheck(with_na, target, id = "id", na = "drop")
-error_check <- wf_precheck(with_na, target, id = "id", na = "error")
-
-c(
-  fractional = fractional_check$ok,
-  drop = drop_check$ok,
-  error = error_check$ok
-)
-```
-
-`"fractional"` allocates a missing dimension according to target shares,
-`"drop"` removes incomplete rows with a warning, and `"error"` blocks the run.
-
-## Resolve zero support with a declared collapse
-
-An infeasible category has positive target population but no sample support.
-Iteration cannot solve it. Declare acceptable merges in `wf_dims()`, let the
-precheck generate a reviewable plan, apply it to both sample and target, and
-run the precheck again.
-
-```{r}
-dims_with_ladder <- wf_dims(
-  gender = c("female", "male"),
-  age = c("young", "old"),
-  .collapse = list(
-    age = list(broad = c(young = "all", old = "all"))
-  )
+target <- wf_import_target(
+  "population-margins.csv",
+  "population-margins.csv.source.dcf",
+  dims,
+  key_map = c(age_group = "age_group", region = "region"),
+  count = "population_count"
 )
 
-ladder_target <- wf_target_population(
-  population,
-  key_map = c(gender = "gender", age = "age"),
-  count = "count",
-  dims = dims_with_ladder,
-  by = "province"
-)
-
-sparse <- sample[!(sample$province == "North" & sample$age == "old"), ]
-blocked <- wf_precheck(sparse, ladder_target, id = "id")
-plan <- wf_suggest_collapse(blocked, dims_with_ladder)
-plan
-
-resolved <- wf_apply_collapse(sparse, ladder_target, plan)
-recheck <- wf_precheck(resolved$sample, resolved$target, id = "id")
-recheck
+precheck <- wf_precheck(design$data, target, id = design$roles$id)
+cell_plan <- wf_plan_cells(design, target, dims)
 ```
 
-Only a declared ladder can produce an automatic suggestion. If no declared
-mapping resolves the issue, WFC leaves it in `plan$unresolved` for human review.
+WFC never widens bounds, changes method, changes target, or approves a plan in
+response to infeasibility. Those are separate human decisions and may require a
+new workflow.

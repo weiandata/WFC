@@ -68,3 +68,56 @@ test_that("safe documentation includes import files and agent refusal contract",
   expect_match(joined, "wf_assess_impact(", fixed = TRUE)
   expect_match(joined, "wf_audit_export(", fixed = TRUE)
 })
+
+test_that("all current user documentation excludes removed weighting paths", {
+  root <- normalizePath(test_path("..", ".."), mustWork = FALSE)
+  paths <- c(
+    file.path(root, "README.md"),
+    file.path(root, "README.zh-CN.md"),
+    list.files(
+      file.path(root, "examples"),
+      pattern = "[.](md|R|Rmd)$",
+      full.names = TRUE
+    ),
+    list.files(
+      file.path(root, "vignettes"),
+      pattern = "[.](md|R|Rmd)$",
+      full.names = TRUE
+    )
+  )
+  paths <- paths[file.exists(paths)]
+  skip_if(length(paths) == 0L, "source documentation is not installed")
+
+  forbidden <- c(
+    "wf_target_manual(",
+    "wf_target_shrink(",
+    "moments =",
+    "mode = \"manual\"",
+    "mode = 'manual'",
+    "wf_run(..., margins ="
+  )
+  for (path in paths) {
+    text <- paste(readLines(path, warn = FALSE), collapse = "\n")
+    for (pattern in forbidden) {
+      expect_false(
+        grepl(pattern, text, fixed = TRUE),
+        info = sprintf("%s still contains %s", basename(path), pattern)
+      )
+    }
+  }
+})
+
+test_that("migration examples use executable safe import and report forms", {
+  root <- normalizePath(test_path("..", ".."), mustWork = FALSE)
+  path <- file.path(root, "docs", "migration", "wfc-1-to-2.md")
+  skip_if_not(file.exists(path), "migration guide is not installed")
+  text <- paste(readLines(path, warn = FALSE), collapse = "\n")
+
+  expect_false(grepl("wf_report(weights, target", text, fixed = TRUE))
+  expect_false(grepl(
+    "source_file = \"population-source.pdf\"",
+    text,
+    fixed = TRUE
+  ))
+  expect_match(text, "population-source.dcf", fixed = TRUE)
+})

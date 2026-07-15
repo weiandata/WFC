@@ -1,8 +1,8 @@
 ---
-title: "Usability foundations in WFC 0.10"
+title: "Review tools for verified weighting"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Usability foundations in WFC 0.10}
+  %\VignetteIndexEntry{Review tools for verified weighting}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -11,91 +11,34 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-WFC 0.10 adds recommendation, reporting, and visualization tools around the
-existing calibration engines. They preserve the package's review discipline:
-recommendations are artifacts for approval, not automatic mutations.
+WFC review tools explain feasibility and weight distortion without changing the
+verified target.
 
-## Prepare one calibrated result
-
-```{r}
-library(WFC)
-data("wfc_example", package = "WFC")
-
-sample <- wfc_example$sample
-dims <- wfc_example$dims
-target <- wf_target_population(
-  wfc_example$population,
-  key_map = c(gender = "gender", age = "age"),
-  count = "count",
-  dims = dims,
-  by = "province"
-)
-weights <- wf_rake(sample, target, id = "id")
-diagnostics <- wf_diagnose(weights, target)
-```
-
-## Recommend a trim cap
-
-`wf_auto_trim()` re-runs raking for each candidate and an untrimmed baseline.
-It reports design effect, margin distortion, warnings, and candidate failures.
-The returned cap is not applied automatically.
-
-```{r}
-trim_advice <- wf_auto_trim(
-  sample,
+```{r review, eval=FALSE}
+precheck <- wf_precheck(
+  design$data,
   target,
-  id = "id",
-  caps = c(2, 4, 8),
+  id = design$roles$id
+)
+
+trim_advice <- wf_auto_trim(
+  design,
+  target,
+  caps = c(2, 4, 6, 8),
   max_deff = 6,
   max_residual = 0.02
 )
-trim_advice
 ```
 
-```{r trim-plot, fig.width=7, fig.height=3.5}
-plot(trim_advice)
+`wf_auto_trim()` returns a frontier and recommendation. It does not apply a cap
+to a production result. A reviewed plan must contain the final bounds.
+
+After weights are locked, decision readers receive a compact status and next
+actions; statistical readers receive full diagnostics and provenance:
+
+```{r reports, eval=FALSE}
+wf_report(locked, audience = "decision")
+wf_report(locked, audience = "statistician")
 ```
 
-## Draft a collapse ladder
-
-The draft uses explicit level order from `wf_dims()` and worst-group support.
-A deliberately high threshold below forces a small demonstration draft. Review
-the mappings before using `draft$ladder` in post-stratification.
-
-```{r}
-draft <- wf_suggest_ladder(sample, target, dims, min_cell = 25)
-draft
-draft$ladder
-```
-
-## Build a manager or analyst dossier
-
-Both audiences read one structured object. The manager projection adds traffic
-lights and publication actions; the analyst projection retains the full
-diagnostic table and method-specific sections.
-
-```{r}
-manager_report <- wf_report(weights, target, audience = "manager")
-manager_report
-
-analyst_report <- wf_report(weights, target, audience = "analyst")
-as.data.frame(analyst_report)
-```
-
-Markdown and standalone escaped HTML use the same payload:
-
-```{r}
-markdown <- wf_report(weights, target, output = "markdown")
-cat(substr(markdown, 1, 240), "...\n")
-```
-
-Version 0.11 activates `lang = "en"` and `lang = "zh_CN"` for reports and plot
-labels. Localization changes only human-facing rendering; stable object fields,
-condition classes, and diagnostic values remain unchanged.
-
-## Inspect the result visually
-
-```{r result-plots, fig.width=7, fig.height=3.5}
-plot(weights, max_groups = 2)
-plot(diagnostics)
-```
+Both views are generated from the same object.

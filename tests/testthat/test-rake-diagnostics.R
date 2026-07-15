@@ -4,7 +4,7 @@ test_that("wf_rake refuses blocked prechecks", {
   sample$gender[1] <- "other"
 
   expect_error(
-    wf_rake(sample, fixture$target, id = "id"),
+    .wf_rake_engine(sample, fixture$target, id = "id"),
     class = "wf_error_feasibility"
   )
 })
@@ -12,7 +12,7 @@ test_that("wf_rake refuses blocked prechecks", {
 test_that("wf_rake returns positive weights matching target margins", {
   fixture <- make_weightflow_fixture()
 
-  weights <- wf_rake(fixture$sample, fixture$target, id = "id", tol = 1e-8)
+  weights <- .wf_rake_engine(fixture$sample, fixture$target, id = "id", tol = 1e-8)
 
   expect_s3_class(weights, "wf_weights")
   expect_true(all(weights$data$weight > 0))
@@ -34,7 +34,7 @@ test_that("wf_rake raises a classed convergence error when IPF cannot finish", {
   fixture <- make_weightflow_fixture()
 
   err <- expect_error(
-    wf_rake(fixture$sample, fixture$target, id = "id", max_iter = 0),
+    .wf_rake_engine(fixture$sample, fixture$target, id = "id", max_iter = 0),
     class = "wf_error_convergence"
   )
   expect_true(!is.null(err$data$group))
@@ -43,7 +43,7 @@ test_that("wf_rake raises a classed convergence error when IPF cannot finish", {
 
 test_that("wf_rake records the installed package version in provenance", {
   fixture <- make_weightflow_fixture()
-  weights <- wf_rake(fixture$sample, fixture$target, id = "id")
+  weights <- .wf_rake_engine(fixture$sample, fixture$target, id = "id")
 
   expect_identical(
     weights$provenance$package_version,
@@ -53,7 +53,7 @@ test_that("wf_rake records the installed package version in provenance", {
 
 test_that("wf_diagnose reports diagnostics and margin error", {
   fixture <- make_weightflow_fixture()
-  weights <- wf_rake(fixture$sample, fixture$target, id = "id", tol = 1e-8)
+  weights <- .wf_rake_engine(fixture$sample, fixture$target, id = "id", tol = 1e-8)
 
   diag <- wf_diagnose(weights, target = fixture$target)
 
@@ -64,7 +64,7 @@ test_that("wf_diagnose reports diagnostics and margin error", {
 
 test_that("raking print and diagnose remain compatible with poststrat changes", {
   fixture <- make_weightflow_fixture()
-  weights <- wf_rake(fixture$sample, fixture$target, id = "id", tol = 1e-8)
+  weights <- .wf_rake_engine(fixture$sample, fixture$target, id = "id", tol = 1e-8)
 
   expect_output(print(weights), "<wf_weights>")
   diag <- wf_diagnose(weights, target = fixture$target)

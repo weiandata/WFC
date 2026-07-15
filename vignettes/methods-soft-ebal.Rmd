@@ -1,119 +1,73 @@
 ---
-title: "Soft calibration and entropy balancing in WFC 0.14"
+title: "Verified calibration methods in WFC 2.0"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Soft calibration and entropy balancing in WFC 0.14}
+  %\VignetteIndexEntry{Verified calibration methods in WFC 2.0}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>", message = FALSE)
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-WFC 0.14 adds two calibration methods behind the existing `wf_calibrate()`
-interface. `method = "soft"` is for declared, auditable relaxation when exact
-margin matching is not defensible or not feasible. `method = "ebal"` is for
-entropy balancing: exact constraints with minimum divergence from the base
-weights.
+All public calibration methods in WFC 2.0 require the `wf_design_data` and
+`wf_verified_target` objects created in the verified workflow. The examples
+below assume `design`, `target`, and `dims` have already passed import and
+review as shown in `vignette("safe-weighting-workflow")`.
 
-## Relax margins deliberately
+## Fixed-tolerance soft calibration
 
-Soft calibration keeps group totals exact and allows margin gaps only within
-declared tolerances. The tolerance is a fraction of the group total and may be a
-single value or a named vector by dimension.
+Soft calibration is for a tolerance declared before outcomes are inspected. It
+does not search for a target, widen tolerance automatically, or optimize a
+study result. The declared tolerance and any relaxed external margin appear in
+the result and statistical report.
 
-```{r}
-library(WFC)
-
-dims <- wf_dims(segment = c("covered", "missing"))
-target <- wf_target_manual(
-  data.frame(
-    dimension = c("segment", "segment"),
-    category = c("covered", "missing"),
-    value = c(90, 10)
-  ),
-  dims
-)
-sample <- data.frame(
-  id = paste0("s", 1:4),
-  segment = "covered"
-)
-
+```{r soft, eval=FALSE}
 soft <- wf_calibrate(
-  sample,
+  design,
   target,
   method = "soft",
-  id = "id",
-  tolerance = 0.11
+  tolerance = 0.02
 )
 
-soft
-soft$relaxation[c(
-  "group", "dim", "category", "target", "achieved",
-  "relative_gap", "within_tolerance"
-)]
+wf_report(soft, audience = "statistician")$sections$soft_relaxation
 ```
 
-If the same zero-support category is outside tolerance, WFC refuses to produce
-weights. That keeps soft calibration explicit rather than silently hiding an
-unusable target.
+If the declared tolerance cannot resolve infeasibility, WFC stops. Select a
+different external target only through a new, independently reviewed workflow.
 
-```{r eval=FALSE}
-wf_calibrate(
-  sample,
-  target,
-  method = "soft",
-  id = "id",
-  tolerance = 0.05
-)
-```
+## Categorical entropy balancing
 
-`wf_report()` includes the same relaxation table, so the published report can
-show which margins were relaxed and by how much.
+Entropy balancing may use only the categorical margins contained in the
+verified target.
 
-## Match moments exactly with entropy balancing
-
-Entropy balancing uses exponential weights to satisfy the standard categorical
-target and optional continuous moment targets. Moment values are target means,
-not totals; WFC multiplies them by the group total internally.
-
-```{r}
-dims2 <- wf_dims(gender = c("female", "male"))
-target2 <- wf_target_manual(
-  data.frame(
-    dimension = c("gender", "gender"),
-    category = c("female", "male"),
-    value = c(2, 2)
-  ),
-  dims2
-)
-sample2 <- data.frame(
-  id = paste0("e", 1:4),
-  gender = c("female", "female", "male", "male"),
-  x = c(0, 1, 0, 1)
-)
-
+```{r ebal, eval=FALSE}
 ebal <- wf_calibrate(
-  sample2,
-  target2,
+  design,
+  target,
   method = "ebal",
-  id = "id",
-  moments = c(x = 0.75)
+  tol = 1e-10
 )
 
-ebal
-ebal$moments
+wf_report(ebal, audience = "statistician")
 ```
 
-The categorical margin and the continuous target mean are both exact within the
-solver tolerance:
+WFC 2.0 has no inline desired-mean interface. Continuous outcome goals,
+pass-rate goals, and desired intervals are not weighting inputs.
 
-```{r}
-sum(ebal$data$weight[sample2$gender == "male"])
-sum(ebal$data$weight * sample2$x) / sum(ebal$data$weight)
+## Bounded logit calibration
+
+Bounds are reviewable settings, not values that WFC expands automatically:
+
+```{r logit, eval=FALSE}
+bounded <- wf_calibrate(
+  design,
+  target,
+  method = "logit",
+  bounds = c(0.3, 3)
+)
 ```
 
-Use entropy balancing when exact moment matching is the requirement. Use soft
-calibration when the target itself requires a declared tolerance and the
-relaxation audit table is part of the deliverable.
+For a consequential analysis, record why the method and settings are suitable
+and include them in the human plan review.

@@ -95,34 +95,31 @@
   list(pid = pid, vals = vals, w0 = w0, n_persons = n)
 }
 
-#' Calibrate sample weights to a target by grouped raking
+#' Rake verified design data to a verified external target
 #'
-#' Runs the precheck -> execute portion of the weighting workflow.
+#' Enforces the WFC 2.0 verified-input boundary before grouped raking.
 #'
-#' @param sample Sample data frame.
-#' @param target A `wf_target` object.
-#' @param id Optional unique unit identifier column.
-#' @param na Missing calibration data policy.
-#' @param trim Optional two-element lower/upper multiplier vector.
-#' @param trim_cycles Number of trim/rerake cycles.
-#' @param tol Convergence tolerance.
-#' @param max_iter Maximum iterations.
-#' @param precheck Whether to run `wf_precheck()` before raking.
-#' @param init_weight Optional column of initial weights. If `NULL`, raking
-#'   starts from uniform weights (unchanged behaviour).
-#' @param parallel Whether to process independent target groups with forked
-#'   parallelism where available, using at most two workers. Windows falls back
-#'   to serial execution.
-#' @param progress Whether to show a `cli` progress bar when `cli` is installed.
+#' @param design An unchanged `wf_design_data`.
+#' @param target An unchanged, non-demo `wf_verified_target`.
+#' @param ... Raking settings other than ID and base-weight roles, which are
+#'   owned by `design`.
 #'
-#' @return A `wf_weights` object.
+#' @return A `wf_weights` object carrying verified input identities.
 #' @export
-wf_rake <- function(sample, target, id = NULL,
-                    na = c("fractional", "drop", "error"),
-                    trim = NULL, trim_cycles = 4,
-                    tol = 1e-6, max_iter = 200, precheck = TRUE,
-                    init_weight = NULL,
-                    parallel = FALSE, progress = FALSE) {
+wf_rake <- function(design, target, ...) {
+  .wf_execute_verified_engine(design, target, "raking", list(...))
+}
+
+#' Internal grouped-raking engine.
+#'
+#' @keywords internal
+#' @noRd
+.wf_rake_engine <- function(sample, target, id = NULL,
+                            na = c("fractional", "drop", "error"),
+                            trim = NULL, trim_cycles = 4,
+                            tol = 1e-6, max_iter = 200, precheck = TRUE,
+                            init_weight = NULL,
+                            parallel = FALSE, progress = FALSE) {
   na <- match.arg(na)
   t0 <- Sys.time()
 

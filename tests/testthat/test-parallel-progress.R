@@ -11,8 +11,8 @@ test_that("wf_rake parallel execution matches serial output", {
   on.exit(options(old), add = TRUE)
 
   fixture <- make_weightflow_fixture()
-  serial <- wf_rake(fixture$sample, fixture$target, id = "id", tol = 1e-10)
-  forked <- wf_rake(
+  serial <- .wf_rake_engine(fixture$sample, fixture$target, id = "id", tol = 1e-10)
+  forked <- .wf_rake_engine(
     fixture$sample,
     fixture$target,
     id = "id",
@@ -35,7 +35,7 @@ test_that("wf_poststrat records parallel and progress provenance", {
   on.exit(options(old), add = TRUE)
 
   fixture <- make_poststrat_fixture()
-  weights <- wf_poststrat(
+  weights <- .wf_poststrat_engine(
     fixture$sample,
     fixture$target,
     min_cell = 1,

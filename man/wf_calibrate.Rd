@@ -2,29 +2,29 @@
 % Please edit documentation in R/calibrate.R
 \name{wf_calibrate}
 \alias{wf_calibrate}
-\title{Calibrate weights with a selected method}
+\title{Calibrate weights from verified design and target objects}
 \usage{
-wf_calibrate(sample, target, method = "raking", ...)
+wf_calibrate(design, target, method = "raking", ...)
 }
 \arguments{
-\item{sample}{Sample data frame.}
+\item{design}{An unchanged \code{wf_design_data} created by
+\code{\link[=wf_prepare_design]{wf_prepare_design()}}.}
 
-\item{target}{A \code{wf_target} object.}
+\item{target}{An unchanged, non-demo \code{wf_verified_target} created by
+\code{\link[=wf_import_target]{wf_import_target()}} or \code{\link[=wf_import_reference]{wf_import_reference()}}.}
 
 \item{method}{Calibration method: \code{"raking"}, \code{"poststrat"}, \code{"greg"}
-(linear GREG), \code{"logit"} (bounded, requires \code{bounds = c(L, U)}),
-\code{"soft"} (penalized margin relaxation), or \code{"ebal"} (entropy balancing).}
+(linear GREG), \code{"logit"} (bounded), \code{"soft"} (declared margin
+relaxation), or \code{"ebal"} (categorical entropy balancing).}
 
-\item{...}{Method-specific arguments. For \code{"greg"} / \code{"logit"}: \code{bounds},
-\code{init_weight}, \code{na}, \code{id}, \code{tol}, \code{max_iter}, \code{precheck}. For \code{"soft"}:
-\code{tolerance}, \code{init_weight}, \code{na}, \code{id}, \code{max_outer}, \code{precheck}. For
-\code{"ebal"}: \code{moments}, \code{init_weight}, \code{na}, \code{id}, \code{tol}, \code{max_iter},
-\code{precheck}.}
+\item{...}{Method settings. ID and base-weight roles come from \code{design} and
+cannot be overridden. Inline target moments are not supported.}
 }
 \value{
-A \code{wf_weights} object.
+A \code{wf_weights} object carrying the verified input identities.
 }
 \description{
-Dispatches to the requested calibration engine while preserving the common
-\code{wf_weights} return contract.
+Enforces the WFC 2.0 verified-input boundary before dispatching to a
+calibration engine. Raw data frames and ordinary \code{wf_target} objects are not
+accepted.
 }
