@@ -120,3 +120,53 @@ review.
 Archival must preserve Git history, tags, releases, licenses, copyright and
 provenance records. It must not delete, transfer, hide, or rewrite either
 repository.
+
+## Archive completion audit
+
+The accountable organization owner, Kunxiang Ma, gave immediate explicit
+approval on 2026-07-15 to archive the two predecessor GitHub repositories. The
+approval was limited to setting the repositories to GitHub read-only Archived
+state. It did not authorize deletion, transfer, visibility changes, history
+rewrites, or removal of branches, tags, releases, licenses, copyright, or
+provenance.
+
+The final states recorded through the GitHub API were:
+
+| Repository | Final `main` commit | Archive time | Visibility | Result |
+| --- | --- | --- | --- | --- |
+| `weiandata/mergecalib` | `4b55f356b58dab3140a4ab1f2066f07eb177fb68` | 2026-07-15 18:55:30 Asia/Kuala_Lumpur (10:55:30 UTC) | Private, unchanged | `archived: true` |
+| `weiandata/ratecalib` | `9d400099a61afc08b950f9e11965c649c9b157ec` | 2026-07-15 18:55:39 Asia/Kuala_Lumpur (10:55:39 UTC) | Public, unchanged | `archived: true` |
+
+- Operator: Codex, using the authenticated GitHub account
+  `makunxiang-weiandata` under the owner's explicit approval.
+- Method: GitHub REST repository update setting only `archived=true`.
+- Both local `main` branches were clean and identical to `origin/main` before
+  the lifecycle change.
+- Both final authorization pull requests passed their repository checks and
+  cross-platform R checks before merge. The resulting `main` commits then
+  passed the post-merge checks before archival.
+- Immediately before archival, each repository had only the `main` branch,
+  no open issue, no open pull request, and no tag or GitHub Release to remove.
+- Immediately after archival, the GitHub API reported `archived: true`, each
+  `main` branch remained readable at the exact commit above, and each README
+  remained readable. No write test was attempted against the archived
+  repositories.
+- WFC remained active and unarchived. The WFC 2.0.0 release and its source
+  artifact remained available with SHA-256
+  `74a76b6b412784ddbb389fc11932422b0e8499415669385095238ca17412d44c`.
+
+### CRAN follow-up for `ratecalib`
+
+The active CRAN index still listed `ratecalib` 0.3.0 on the verification date.
+Its CRAN `URL` and `BugReports` fields pointed to the maintainer's personal
+repository `makunxiang-cmd/ratecalib`, not to `weiandata/ratecalib`, and the
+active CRAN index showed no reverse dependencies. The registered maintainer
+reported sending the plain-text archive request to `CRAN@R-project.org` at
+2026-07-15 18:41 Asia/Kuala_Lumpur (10:41 UTC).
+
+CRAN receipt or archival confirmation had not yet been supplied when the
+GitHub repositories were archived. The accountable owner explicitly approved
+proceeding with GitHub archival while that external confirmation was pending.
+When CRAN responds, the response date and resulting index status must be added
+to this maintained WFC record; the predecessor repository must not be reopened
+merely to add the CRAN follow-up.
