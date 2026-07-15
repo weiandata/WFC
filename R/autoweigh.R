@@ -8,6 +8,53 @@
   answer %in% c("y", "yes")
 }
 
+#' Run a guided workflow from verified design and target objects
+#'
+#' Provides the guided WFC experience while enforcing the same WFC 2.0 input
+#' boundary used by direct calibration and approved-plan execution.
+#'
+#' @param design An unchanged `wf_design_data`.
+#' @param target An unchanged, non-demo `wf_verified_target`.
+#' @param dims A `wf_dims` declaration matching `target`.
+#' @param method Calibration method. `"auto"` selects between supported safe
+#'   engines from declared settings only.
+#' @param ladder Reviewed collapse ladder for post-stratification.
+#' @param min_cell Positive post-stratification cell-size threshold.
+#' @param bounds Two-element bounds for logit calibration.
+#' @param trim Raking trim control.
+#' @param max_deff Maximum design effect accepted by automatic trimming.
+#' @param max_residual Maximum margin residual accepted by automatic trimming.
+#' @param interactive Whether review prompts may be shown.
+#' @param lang Output language.
+#' @param ... Method settings. ID and base-weight roles cannot be overridden.
+#'
+#' @return A `wf_autoweigh_result` carrying verified input identities.
+#' @export
+wf_autoweigh <- function(design, target, dims,
+                         method = c("auto", "raking", "poststrat", "logit"),
+                         ladder = NULL, min_cell = NULL,
+                         bounds = c(0.3, 3), trim = "auto",
+                         max_deff = 6, max_residual = 0.02,
+                         interactive = base::interactive(),
+                         lang = NULL, ...) {
+  settings <- c(
+    list(
+      dims = dims,
+      method = method,
+      ladder = ladder,
+      min_cell = min_cell,
+      bounds = bounds,
+      trim = trim,
+      max_deff = max_deff,
+      max_residual = max_residual,
+      interactive = interactive,
+      lang = lang
+    ),
+    list(...)
+  )
+  .wf_execute_verified_engine(design, target, "autoweigh", settings)
+}
+
 #' Run a guided and auditable weighting workflow
 #'
 #' Builds or accepts a canonical target, enforces the precheck discipline,
@@ -44,17 +91,18 @@
 #' @return A `wf_autoweigh_result` containing weights, diagnostics, report,
 #'   ordered ledger, aligned artifacts, final sample and target, selected
 #'   method, and normalized language.
-#' @export
-wf_autoweigh <- function(sample, population, dims,
-                          key_map = NULL, count = NULL,
-                          by = NULL, id = NULL,
-                          method = c("auto", "raking", "poststrat", "logit"),
-                          ladder = NULL, min_cell = NULL,
-                          bounds = c(0.3, 3),
-                          trim = "auto",
-                          max_deff = 6, max_residual = 0.02,
-                          interactive = base::interactive(),
-                          lang = NULL, ...) {
+#' @keywords internal
+#' @noRd
+.wf_autoweigh_engine <- function(sample, population, dims,
+                                 key_map = NULL, count = NULL,
+                                 by = NULL, id = NULL,
+                                 method = c("auto", "raking", "poststrat", "logit"),
+                                 ladder = NULL, min_cell = NULL,
+                                 bounds = c(0.3, 3),
+                                 trim = "auto",
+                                 max_deff = 6, max_residual = 0.02,
+                                 interactive = base::interactive(),
+                                 lang = NULL, ...) {
   method <- tryCatch(
     match.arg(method),
     error = function(e) {
@@ -351,7 +399,7 @@ wf_autoweigh <- function(sample, population, dims,
       ),
       dots
     )
-    trim_search <- do.call(wf_auto_trim, trim_search_args)
+    trim_search <- do.call(.wf_auto_trim_engine, trim_search_args)
     recommendation <- trim_search$recommended_cap
     if (is.na(recommendation)) {
       note(
@@ -410,7 +458,7 @@ wf_autoweigh <- function(sample, population, dims,
     ),
     engine_dots
   )
-  weights <- do.call(wf_calibrate, engine_args)
+  weights <- do.call(.wf_calibrate_engine, engine_args)
   diagnostics <- wf_diagnose(weights, target = current_target)
   report <- wf_report(
     weights,

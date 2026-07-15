@@ -5,7 +5,7 @@ test_that("wf_rake agrees with survey::rake on grouped margins", {
   sample <- fixture$sample
   sample$design_weight <- seq(0.75, 1.5, length.out = nrow(sample))
 
-  actual <- wf_rake(
+  actual <- .wf_rake_engine(
     sample,
     fixture$target,
     id = "id",

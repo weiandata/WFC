@@ -1,7 +1,7 @@
 test_that("decision and statistician aliases preserve legacy report tables", {
   fixture <- make_weightflow_fixture()
   f <- list(
-    weights = wf_rake(fixture$sample, fixture$target, id = "id"),
+    weights = .wf_rake_engine(fixture$sample, fixture$target, id = "id"),
     target = fixture$target
   )
 

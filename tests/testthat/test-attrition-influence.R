@@ -95,7 +95,7 @@ test_that("wf_attrition composes with later weighting stages", {
 
 test_that("wf_influence ranks high-impact units and adds margin shares", {
   fixture <- make_weightflow_fixture()
-  weights <- wf_rake(
+  weights <- .wf_rake_engine(
     fixture$sample,
     fixture$target,
     id = "id",
@@ -127,7 +127,7 @@ test_that("wf_influence ranks high-impact units and adds margin shares", {
 
 test_that("wf_influence validates IDs and top count", {
   fixture <- make_weightflow_fixture()
-  weights <- wf_rake(fixture$sample, fixture$target, id = "id")
+  weights <- .wf_rake_engine(fixture$sample, fixture$target, id = "id")
 
   expect_error(wf_influence(list()), class = "wf_error_input")
   expect_error(wf_influence(weights, top = 0), class = "wf_error_input")

@@ -1,33 +1,36 @@
-#' Run cell-level post-stratification
+#' Post-stratify verified design data to a verified joint target
 #'
-#' Applies calibration-style post-stratification to a sample using a joint-cell
-#' population target built with `wf_target_population(..., keep_joint = TRUE)`.
+#' Enforces the WFC 2.0 verified-input boundary before cell-level
+#' post-stratification.
 #'
-#' @param sample Sample data frame.
-#' @param target A `wf_target` object with joint cells.
+#' @param design An unchanged `wf_design_data`.
+#' @param target An unchanged, non-demo `wf_verified_target` with joint cells.
 #' @param min_cell Minimum sample count per resolved cell.
 #' @param ladder A `wf_collapse_ladder` object.
-#' @param init_weight Optional initial weight column. If `NULL`, all initial
-#'   weights are one.
-#' @param granularity Resolution strategy, either `"adaptive"` or `"province"`.
-#' @param empty_cell Empty-cell policy, one of `"redistribute"`, `"flag"`, or
-#'   `"error"`.
-#' @param id Optional unique unit identifier column.
-#' @param precheck Reserved for the workflow contract; validation always runs.
-#' @param tol Relative tolerance for enforced group-total checks.
-#' @param parallel Whether to process independent target groups with forked
-#'   parallelism where available, using at most two workers. Windows falls back
-#'   to serial execution.
-#' @param progress Whether to show a `cli` progress bar when `cli` is installed.
+#' @param ... Post-stratification settings other than ID and base-weight roles,
+#'   which are owned by `design`.
 #'
 #' @return A `wf_weights` object with `cell_report` and `collapse_map`.
 #' @export
-wf_poststrat <- function(sample, target, min_cell, ladder,
-                         init_weight = NULL,
-                         granularity = c("adaptive", "province"),
-                         empty_cell = c("redistribute", "flag", "error"),
-                         id = NULL, precheck = TRUE, tol = 1e-8,
-                         parallel = FALSE, progress = FALSE) {
+wf_poststrat <- function(design, target, min_cell, ladder, ...) {
+  .wf_execute_verified_engine(
+    design,
+    target,
+    "poststrat",
+    c(list(min_cell = min_cell, ladder = ladder), list(...))
+  )
+}
+
+#' Internal cell-level post-stratification engine.
+#'
+#' @keywords internal
+#' @noRd
+.wf_poststrat_engine <- function(sample, target, min_cell, ladder,
+                                 init_weight = NULL,
+                                 granularity = c("adaptive", "province"),
+                                 empty_cell = c("redistribute", "flag", "error"),
+                                 id = NULL, precheck = TRUE, tol = 1e-8,
+                                 parallel = FALSE, progress = FALSE) {
   granularity <- match.arg(granularity)
   empty_cell <- match.arg(empty_cell)
   t0 <- Sys.time()

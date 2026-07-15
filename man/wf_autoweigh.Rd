@@ -2,16 +2,12 @@
 % Please edit documentation in R/autoweigh.R
 \name{wf_autoweigh}
 \alias{wf_autoweigh}
-\title{Run a guided and auditable weighting workflow}
+\title{Run a guided workflow from verified design and target objects}
 \usage{
 wf_autoweigh(
-  sample,
-  population,
+  design,
+  target,
   dims,
-  key_map = NULL,
-  count = NULL,
-  by = NULL,
-  id = NULL,
   method = c("auto", "raking", "poststrat", "logit"),
   ladder = NULL,
   min_cell = NULL,
@@ -25,56 +21,37 @@ wf_autoweigh(
 )
 }
 \arguments{
-\item{sample}{Non-empty sample data frame.}
+\item{design}{An unchanged \code{wf_design_data}.}
 
-\item{population}{A raw population data frame or ready \code{wf_target}.}
+\item{target}{An unchanged, non-demo \code{wf_verified_target}.}
 
-\item{dims}{A \code{wf_dims} declaration.}
+\item{dims}{A \code{wf_dims} declaration matching \code{target}.}
 
-\item{key_map}{Named population-column mapping required for raw population
-data.}
+\item{method}{Calibration method. \code{"auto"} selects between supported safe
+engines from declared settings only.}
 
-\item{count}{Population count column required for raw population data.}
-
-\item{by}{Optional grouping variable used when building a raw target.}
-
-\item{id}{Optional unique unit identifier column.}
-
-\item{method}{Calibration method. \code{"auto"} selects post-stratification only
-when both \code{ladder} and \code{min_cell} are supplied; otherwise it selects
-raking.}
-
-\item{ladder}{Reviewed \code{wf_collapse_ladder}, or a \code{wf_ladder_draft} whose
-validated \verb{$ladder} should be used for post-stratification.}
+\item{ladder}{Reviewed collapse ladder for post-stratification.}
 
 \item{min_cell}{Positive post-stratification cell-size threshold.}
 
 \item{bounds}{Two-element bounds for logit calibration.}
 
-\item{trim}{Raking trim control: \code{"auto"}, \code{NULL}, or two numeric bounds.}
+\item{trim}{Raking trim control.}
 
 \item{max_deff}{Maximum design effect accepted by automatic trimming.}
 
 \item{max_residual}{Maximum margin residual accepted by automatic trimming.}
 
-\item{interactive}{Whether declared collapse and finite trim recommendations
-require confirmation.}
+\item{interactive}{Whether review prompts may be shown.}
 
-\item{lang}{Output language for narration and the manager report.}
+\item{lang}{Output language.}
 
-\item{...}{Method controls. Raking accepts \code{caps}, \code{lo}, \code{na},
-\code{trim_cycles}, \code{tol}, \code{max_iter}, and \code{init_weight}; logit accepts \code{na},
-\code{tol}, \code{max_iter}, and \code{init_weight}; post-stratification accepts
-\code{granularity}, \code{empty_cell}, \code{tol}, and \code{init_weight}.}
+\item{...}{Method settings. ID and base-weight roles cannot be overridden.}
 }
 \value{
-A \code{wf_autoweigh_result} containing weights, diagnostics, report,
-ordered ledger, aligned artifacts, final sample and target, selected
-method, and normalized language.
+A \code{wf_autoweigh_result} carrying verified input identities.
 }
 \description{
-Builds or accepts a canonical target, enforces the precheck discipline,
-applies only declared collapse remediations, optionally recommends and
-applies raking trim bounds, then returns weights, diagnostics, a manager
-report, and a machine-readable decision ledger.
+Provides the guided WFC experience while enforcing the same WFC 2.0 input
+boundary used by direct calibration and approved-plan execution.
 }

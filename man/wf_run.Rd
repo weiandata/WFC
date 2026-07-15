@@ -10,34 +10,29 @@ wf_run(
   dims = NULL,
   population = NULL,
   reference = NULL,
-  margins = NULL,
   base_weight = NULL
 )
 }
 \arguments{
 \item{spec}{A \code{wf_pipeline} object.}
 
-\item{sample}{Runtime sample data frame.}
+\item{sample}{An unchanged \code{wf_design_data} object.}
 
-\item{dims}{A \code{wf_dims} object required when the pipeline builds its target.}
+\item{dims}{Optional \code{wf_dims} used to verify target dimensions.}
 
-\item{population}{Runtime population data for \code{target$mode = "population"}.}
+\item{population}{A verified population target for population mode.}
 
-\item{reference}{Runtime reference data for reference targets or propensity.}
+\item{reference}{A verified reference target for reference mode.}
 
-\item{margins}{Runtime manual margins for \code{target$mode = "manual"} when
-margins are not embedded in the spec.}
-
-\item{base_weight}{Optional starting weight column or numeric vector. Numeric
-vectors make \code{wf_run()} convenient as a \code{wf_replicates()} refit body.}
+\item{base_weight}{Deprecated runtime base-weight input. WFC 2.0 requires
+the base-weight role to be declared in \code{sample}; supplying this argument
+raises a safety error.}
 }
 \value{
 A \code{wf_weights} object with pipeline provenance and optional
 \verb{$pipeline_validation}.
 }
 \description{
-Executes a \code{wf_pipeline()} specification against runtime sample and target
-data. The run builds the declared target, optionally fits a propensity
-pseudo-weight stage, runs the calibration stage, records pipeline provenance,
-and evaluates any declared validation thresholds.
+Executes a \code{wf_pipeline()} specification against verified design and target
+objects, records provenance, and evaluates declared validation thresholds.
 }

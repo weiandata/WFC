@@ -44,7 +44,7 @@ make_ebal_fixture <- function() {
 test_that("soft calibration relaxes infeasible margins within declared tolerance", {
   fixture <- make_soft_fixture()
 
-  soft <- wf_calibrate(
+  soft <- .wf_calibrate_engine(
     fixture$sample,
     fixture$target,
     method = "soft",
@@ -66,7 +66,7 @@ test_that("soft calibration refuses relaxation beyond tolerance", {
   fixture <- make_soft_fixture()
 
   expect_error(
-    wf_calibrate(
+    .wf_calibrate_engine(
       fixture$sample,
       fixture$target,
       method = "soft",
@@ -76,7 +76,7 @@ test_that("soft calibration refuses relaxation beyond tolerance", {
     class = "wf_error_feasibility"
   )
   expect_error(
-    wf_calibrate(
+    .wf_calibrate_engine(
       fixture$sample,
       fixture$target,
       method = "soft",
@@ -93,7 +93,7 @@ test_that("soft calibration still blocks non-relaxable precheck errors", {
   bad$segment[[1]] <- "unknown"
 
   expect_error(
-    wf_calibrate(
+    .wf_calibrate_engine(
       bad,
       fixture$target,
       method = "soft",
@@ -107,7 +107,7 @@ test_that("soft calibration still blocks non-relaxable precheck errors", {
 test_that("entropy balancing hits verified categorical margins", {
   fixture <- make_ebal_fixture()
 
-  ebal <- wf_calibrate(
+  ebal <- .wf_calibrate_engine(
     fixture$sample,
     fixture$target,
     method = "ebal",
@@ -125,15 +125,13 @@ test_that("entropy balancing hits verified categorical margins", {
 })
 
 test_that("pipeline calibration stage accepts categorical entropy balancing", {
-  fixture <- make_ebal_fixture()
+  fixture <- make_safe_workflow_fixture()
   spec <- wf_pipeline(
     target = fixture$target,
-    stages = list(
-      calibrate = list(method = "ebal", id = "id")
-    )
+    stages = list(calibrate = list(method = "ebal"))
   )
 
-  out <- wf_run(spec, fixture$sample)
+  out <- wf_run(spec, fixture$design)
 
   expect_s3_class(out, "wf_weights")
   expect_identical(out$provenance$method, "ebal")

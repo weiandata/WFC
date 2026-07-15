@@ -1,7 +1,7 @@
 make_report_weights <- function() {
   fixture <- make_weightflow_fixture()
   list(
-    weights = wf_rake(fixture$sample, fixture$target, id = "id", tol = 1e-8),
+    weights = .wf_rake_engine(fixture$sample, fixture$target, id = "id", tol = 1e-8),
     target = fixture$target
   )
 }

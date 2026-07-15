@@ -8,7 +8,7 @@ make_auto_trim_fixture <- function() {
 test_that("wf_auto_trim recommends no trimming when the baseline meets criteria", {
   fixture <- make_auto_trim_fixture()
 
-  out <- wf_auto_trim(
+  out <- .wf_auto_trim_engine(
     fixture$sample,
     fixture$target,
     id = "id",
@@ -30,7 +30,7 @@ test_that("wf_auto_trim recommends no trimming when the baseline meets criteria"
 test_that("wf_auto_trim selects the loosest finite cap meeting both criteria", {
   fixture <- make_auto_trim_fixture()
 
-  out <- wf_auto_trim(
+  out <- .wf_auto_trim_engine(
     fixture$sample,
     fixture$target,
     id = "id",
@@ -50,7 +50,7 @@ test_that("wf_auto_trim selects the loosest finite cap meeting both criteria", {
 test_that("wf_auto_trim returns NA when no candidate meets the criteria", {
   fixture <- make_auto_trim_fixture()
 
-  out <- wf_auto_trim(
+  out <- .wf_auto_trim_engine(
     fixture$sample,
     fixture$target,
     id = "id",
@@ -67,7 +67,7 @@ test_that("wf_auto_trim returns NA when no candidate meets the criteria", {
 test_that("wf_auto_trim records candidate failures without aborting the sweep", {
   fixture <- make_auto_trim_fixture()
 
-  out <- wf_auto_trim(
+  out <- .wf_auto_trim_engine(
     fixture$sample,
     fixture$target,
     id = "id",
@@ -88,30 +88,30 @@ test_that("wf_auto_trim validates its controls and owns the trim argument", {
   fixture <- make_weightflow_fixture()
 
   expect_error(
-    wf_auto_trim(fixture$sample, fixture$target, caps = c(2, NA)),
+    .wf_auto_trim_engine(fixture$sample, fixture$target, caps = c(2, NA)),
     class = "wf_error_input"
   )
   expect_error(
-    wf_auto_trim(fixture$sample, fixture$target, caps = c(2, 2)),
+    .wf_auto_trim_engine(fixture$sample, fixture$target, caps = c(2, 2)),
     class = "wf_error_input"
   )
   expect_error(
-    wf_auto_trim(fixture$sample, fixture$target, lo = 0),
+    .wf_auto_trim_engine(fixture$sample, fixture$target, lo = 0),
     class = "wf_error_input"
   )
   expect_error(
-    wf_auto_trim(fixture$sample, fixture$target, max_deff = 0),
+    .wf_auto_trim_engine(fixture$sample, fixture$target, max_deff = 0),
     class = "wf_error_input"
   )
   expect_error(
-    wf_auto_trim(fixture$sample, fixture$target, trim = c(0.1, 4)),
+    .wf_auto_trim_engine(fixture$sample, fixture$target, trim = c(0.1, 4)),
     class = "wf_error_input"
   )
 })
 
 test_that("wf_auto_trim prints its recommendation and frontier", {
   fixture <- make_weightflow_fixture()
-  out <- wf_auto_trim(
+  out <- .wf_auto_trim_engine(
     fixture$sample,
     fixture$target,
     caps = c(2, 4),

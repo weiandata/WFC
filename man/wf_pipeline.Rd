@@ -8,10 +8,9 @@ wf_pipeline(target, stages, validate = NULL)
 }
 \arguments{
 \item{target}{Target declaration. Use a list with \code{mode = "population"},
-\code{"reference"}, or \code{"manual"}, or pass a ready \code{wf_target}.}
+\code{"reference"}, or \code{"object"}, or pass a \code{wf_verified_target}.}
 
-\item{stages}{Named stage list. A \code{calibrate} stage is required; an optional
-\code{propensity} stage runs before calibration.}
+\item{stages}{Named stage list with a required \code{calibrate} stage.}
 
 \item{validate}{Optional validation thresholds. Supported keys are
 \code{max_deff} and \code{max_margin_dev}.}
@@ -21,18 +20,6 @@ A \code{wf_pipeline} object.
 }
 \description{
 Creates a serializable specification for a recurring weighting run. The
-specification records how to build the target, which weighting stages to run,
-and which post-run validation thresholds to check. It stores no runtime
-sample data unless the caller deliberately supplies a ready \code{wf_target}.
-}
-\examples{
-spec <- wf_pipeline(
-  target = list(
-    mode = "population",
-    key_map = c(gender = "gender"),
-    count = "count"
-  ),
-  stages = list(calibrate = list(method = "raking", id = "id")),
-  validate = list(max_deff = 6)
-)
+specification records which verified target mode and calibration stage to
+use and which post-run validation thresholds to check.
 }

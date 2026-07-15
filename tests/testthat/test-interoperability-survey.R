@@ -1,6 +1,6 @@
 make_interoperability_weights <- function() {
   fixture <- make_weightflow_fixture()
-  weights <- wf_rake(
+  weights <- .wf_rake_engine(
     fixture$sample,
     fixture$target,
     id = "id",

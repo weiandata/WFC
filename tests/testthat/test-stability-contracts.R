@@ -20,12 +20,12 @@ test_that("wf_rake is deterministic and invariant to row order", {
   fixture <- make_weightflow_fixture()
   sample <- fixture$sample
 
-  first <- wf_rake(sample, fixture$target, id = "id", tol = 1e-10)
-  second <- wf_rake(sample, fixture$target, id = "id", tol = 1e-10)
+  first <- .wf_rake_engine(sample, fixture$target, id = "id", tol = 1e-10)
+  second <- .wf_rake_engine(sample, fixture$target, id = "id", tol = 1e-10)
 
   set.seed(901)
   shuffled <- sample[sample(seq_len(nrow(sample))), , drop = FALSE]
-  reordered <- wf_rake(shuffled, fixture$target, id = "id", tol = 1e-10)
+  reordered <- .wf_rake_engine(shuffled, fixture$target, id = "id", tol = 1e-10)
 
   first_weight <- stats::setNames(first$data$weight, first$data$id)
   second_weight <- stats::setNames(second$data$weight, second$data$id)
@@ -53,13 +53,13 @@ test_that("wf_rake is invariant to calibration dimension order", {
     by = "province"
   )
 
-  original <- wf_rake(
+  original <- .wf_rake_engine(
     fixture$sample,
     fixture$target,
     id = "id",
     tol = 1e-10
   )
-  reversed <- wf_rake(
+  reversed <- .wf_rake_engine(
     fixture$sample,
     reversed_target,
     id = "id",

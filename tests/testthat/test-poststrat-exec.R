@@ -1,7 +1,7 @@
 test_that("wf_poststrat matches joint cell population totals", {
   fixture <- make_poststrat_fixture()
 
-  weights <- wf_poststrat(
+  weights <- .wf_poststrat_engine(
     fixture$sample,
     fixture$target,
     min_cell = 1,
@@ -21,7 +21,7 @@ test_that("wf_poststrat rejects a missing init_weight column with a classed erro
   fixture <- make_poststrat_fixture()
 
   expect_error(
-    wf_poststrat(
+    .wf_poststrat_engine(
       fixture$sample,
       fixture$target,
       min_cell = 1,
@@ -37,7 +37,7 @@ test_that("wf_poststrat preserves initial weight ratios within resolved cells", 
   fixture <- make_poststrat_fixture()
   fixture$sample$base_w <- seq_len(nrow(fixture$sample))
 
-  weights <- wf_poststrat(
+  weights <- .wf_poststrat_engine(
     fixture$sample,
     fixture$target,
     min_cell = 2,
@@ -64,7 +64,7 @@ test_that("wf_poststrat can flag or reject empty cells", {
   fixture$sample <- fixture$sample[fixture$sample$gender == "female", ]
 
   expect_error(
-    suppressWarnings(wf_poststrat(
+    suppressWarnings(.wf_poststrat_engine(
       fixture$sample,
       fixture$target,
       min_cell = 1,
@@ -74,7 +74,7 @@ test_that("wf_poststrat can flag or reject empty cells", {
     class = "wf_error_feasibility"
   )
 
-  flagged <- suppressWarnings(wf_poststrat(
+  flagged <- suppressWarnings(.wf_poststrat_engine(
     fixture$sample,
     fixture$target,
     min_cell = 1,
@@ -88,7 +88,7 @@ test_that("wf_poststrat can flag or reject empty cells", {
 test_that("wf_diagnose supports poststrat weights", {
   fixture <- make_poststrat_fixture()
 
-  weights <- wf_poststrat(
+  weights <- .wf_poststrat_engine(
     fixture$sample,
     fixture$target,
     min_cell = 1,

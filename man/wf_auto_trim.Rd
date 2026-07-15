@@ -5,9 +5,8 @@
 \title{Recommend a weight-trimming cap}
 \usage{
 wf_auto_trim(
-  sample,
+  design,
   target,
-  id = NULL,
   caps = c(2, 3, 4, 5, 6, 8, 10, 12),
   lo = 0.05,
   max_deff = 6,
@@ -16,11 +15,9 @@ wf_auto_trim(
 )
 }
 \arguments{
-\item{sample}{Sample data frame.}
+\item{design}{An unchanged \code{wf_design_data}.}
 
-\item{target}{A \code{wf_target} object.}
-
-\item{id}{Optional unique unit identifier column.}
+\item{target}{An unchanged, non-demo \code{wf_verified_target}.}
 
 \item{caps}{Unique positive finite upper-cap multipliers.}
 
@@ -30,8 +27,8 @@ wf_auto_trim(
 
 \item{max_residual}{Maximum acceptable worst relative margin residual.}
 
-\item{...}{Additional arguments passed to \code{\link[=wf_rake]{wf_rake()}}. \code{trim} is not allowed
-because this function owns the candidate trim settings.}
+\item{...}{Additional raking settings. ID and base-weight roles are owned by
+\code{design}; \code{trim} is not allowed because this function owns candidates.}
 }
 \value{
 A \code{wf_auto_trim} object containing the candidate frontier and the
@@ -42,15 +39,4 @@ meets both criteria.
 Sweeps candidate upper caps by rerunning raking and reports the trade-off
 between design effect and residual margin error. The function recommends a
 cap but never applies it to a production result.
-}
-\examples{
-data(wfc_example)
-target <- wf_target_population(
-  wfc_example$population,
-  c(gender = "gender", age = "age"),
-  "count",
-  wfc_example$dims,
-  by = "province"
-)
-wf_auto_trim(wfc_example$sample, target, id = "id", caps = c(2, 4))
 }

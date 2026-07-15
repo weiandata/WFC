@@ -1,5 +1,5 @@
 run_autoweigh <- function(...) {
-  suppressMessages(wf_autoweigh(...))
+  suppressMessages(.wf_autoweigh_engine(...))
 }
 
 make_autoweigh_collapse_fixture <- function() {

@@ -7,6 +7,140 @@
   .wf_sha256_object(approval[setdiff(names(approval), "identity")])
 }
 
+#' Execute one weighting engine behind the verified-input boundary.
+#'
+#' @param design An unchanged `wf_design_data`.
+#' @param target An unchanged, non-demo `wf_verified_target`.
+#' @param method Internal engine identifier.
+#' @param settings Named engine settings.
+#' @keywords internal
+#' @noRd
+.wf_execute_verified_engine <- function(design, target, method, settings = list()) {
+  design_ok <- inherits(design, "wf_design_data") &&
+    identical(design$identity, .wf_design_identity(design$data, design$roles))
+  target_ok <- inherits(target, "wf_verified_target") &&
+    !isTRUE(target$demo_only) &&
+    identical(target$identity, .wf_verified_target_identity(target))
+  if (!design_ok || !target_ok) {
+    .wf_safety_abort(
+      "verified_weighting_inputs_required",
+      paste(
+        "Weighting requires an unchanged wf_design_data and a non-demo",
+        "wf_verified_target."
+      ),
+      "design,target",
+      next_actions = c("prepare_design_data", "import_verified_target")
+    )
+  }
+  required_columns <- unique(c(target$by, target$dims))
+  allowed_columns <- unique(c(
+    design$roles$calibration,
+    design$roles$strata,
+    design$roles$clusters,
+    design$roles$fpc
+  ))
+  missing_roles <- setdiff(required_columns, allowed_columns)
+  if (length(missing_roles) > 0L) {
+    .wf_safety_abort(
+      "target_design_roles_mismatch",
+      "Target fields must be declared design or calibration variables.",
+      "target",
+      evidence = list(columns = missing_roles),
+      next_actions = "prepare_matching_design_data"
+    )
+  }
+  settings_named <- is.list(settings) &&
+    (length(settings) == 0L ||
+     (!is.null(names(settings)) && all(nzchar(names(settings)))))
+  if (!settings_named) {
+    .wf_safety_abort(
+      "weighting_settings_invalid",
+      "Weighting settings must be a named list.",
+      "settings"
+    )
+  }
+  owned <- intersect(names(settings), c("sample", "design", "target", "id", "init_weight"))
+  if (length(owned) > 0L) {
+    .wf_safety_abort(
+      "design_role_override_unsupported",
+      "WFC owns sample, target, ID, and base-weight roles after design preparation.",
+      owned[[1]],
+      evidence = list(arguments = owned),
+      next_actions = "prepare_design_with_required_roles"
+    )
+  }
+
+  base <- list(
+    sample = design$data,
+    target = target,
+    id = design$roles$id,
+    init_weight = design$roles$base_weight
+  )
+  weights <- switch(
+    method,
+    raking = do.call(.wf_rake_engine, c(base, settings)),
+    poststrat = do.call(.wf_poststrat_engine, c(base, settings)),
+    greg = do.call(
+      .wf_calibrate_engine,
+      c(base[c("sample", "target")], list(method = method),
+        base[c("id", "init_weight")], settings)
+    ),
+    logit = do.call(
+      .wf_calibrate_engine,
+      c(base[c("sample", "target")], list(method = method),
+        base[c("id", "init_weight")], settings)
+    ),
+    soft = do.call(
+      .wf_calibrate_engine,
+      c(base[c("sample", "target")], list(method = method),
+        base[c("id", "init_weight")], settings)
+    ),
+    ebal = do.call(
+      .wf_calibrate_engine,
+      c(base[c("sample", "target")], list(method = method),
+        base[c("id", "init_weight")], settings)
+    ),
+    auto_trim = do.call(.wf_auto_trim_engine, c(base, settings)),
+    autoweigh = {
+      dims <- settings$dims
+      settings$dims <- NULL
+      do.call(
+        .wf_autoweigh_engine,
+        c(
+          list(
+            sample = design$data,
+            population = target,
+            dims = dims,
+            id = design$roles$id
+          ),
+          if (!is.null(design$roles$base_weight)) {
+            c(settings, list(init_weight = design$roles$base_weight))
+          } else {
+            settings
+          }
+        )
+      )
+    },
+    .wf_safety_abort(
+      "weight_method_unsupported",
+      "The requested weighting method is not supported.",
+      "method",
+      evidence = list(method = method)
+    )
+  )
+
+  if (inherits(weights, "wf_autoweigh_result")) {
+    weights$weights$provenance$design_identity <- design$identity
+    weights$weights$provenance$target_identity <- target$identity
+    weights$design_identity <- design$identity
+    weights$target_identity <- target$identity
+  } else if (inherits(weights, "wf_weights")) {
+    weights$provenance$design_identity <- design$identity
+    weights$provenance$target_identity <- target$identity
+  }
+  weights
+}
+
 #' Record a human attestation for a reviewed weight plan
 #'
 #' Approval records are separate from plans. AI agents may prepare plans but
@@ -173,26 +307,14 @@ wf_execute_plan <- function(plan, approval, design, target) {
     )
   }
 
-  id <- effective_design$roles$id
-  init_weight <- effective_design$roles$base_weight
   method <- plan$method
   if (identical(method, "raking")) {
-    weights <- wf_calibrate(
-      effective_design$data,
-      effective_target,
-      method = "raking",
-      id = id,
-      init_weight = init_weight,
+    settings <- list(
       trim = plan$settings$bounds,
       precheck = TRUE
     )
   } else if (identical(method, "logit")) {
-    weights <- wf_calibrate(
-      effective_design$data,
-      effective_target,
-      method = "logit",
-      id = id,
-      init_weight = init_weight,
+    settings <- list(
       bounds = plan$settings$bounds,
       precheck = TRUE
     )
@@ -203,13 +325,9 @@ wf_execute_plan <- function(plan, approval, design, target) {
     )
     effective_dims <- do.call(wf_dims, dim_args)
     identity_ladder <- wf_collapse_ladder(effective_dims)
-    weights <- wf_poststrat(
-      effective_design$data,
-      effective_target,
+    settings <- list(
       min_cell = plan$settings$min_cell,
       ladder = identity_ladder,
-      init_weight = init_weight,
-      id = id,
       empty_cell = "error",
       precheck = TRUE
     )
@@ -220,10 +338,16 @@ wf_execute_plan <- function(plan, approval, design, target) {
       "method"
     )
   }
+  weights <- .wf_execute_verified_engine(
+    effective_design,
+    effective_target,
+    method,
+    settings
+  )
 
   .wf_match_unit_ids(
     effective_design$data,
-    id,
+    effective_design$roles$id,
     weights$data$id,
     "calibrated weights",
     "wf_execute_plan()"

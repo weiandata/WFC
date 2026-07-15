@@ -60,8 +60,14 @@ agents that already hold safe objects. Their first two inputs are a
 wf_calibrate(design, target, method = "raking", ...)
 wf_rake(design, target, ...)
 wf_poststrat(design, target, min_cell, ladder, ...)
+wf_auto_trim(design, target,
+             caps = c(2, 3, 4, 5, 6, 8, 10, 12),
+             lo = 0.05, max_deff = 6, max_residual = 0.02, ...)
 wf_autoweigh(design, target, dims,
              method = c("auto", "raking", "poststrat", "logit"), ...)
+wf_pipeline(target, stages, validate = NULL)
+wf_run(spec, sample, dims = NULL, population = NULL,
+       reference = NULL, base_weight = NULL)
 ```
 
 Categorical entropy calibration is retained only when its constraints come
@@ -100,22 +106,24 @@ margin does not make it supported.
 
 Additive fields may be introduced, but these fields retain their meaning:
 
-- `wf_design_data`: `data`, `id`, `calibration`, `base_weight`, `design`,
-  `identity`, and `created`;
+- `wf_design_data`: `data`, `roles`, `identity`, `created`, and
+  `package_version`;
 - `wf_verified_target`: the inherited `wf_target` fields `mode`, `by`, `dims`,
-  `groups`, `meta`, and `joint`, plus `source`, `source_identity`, `identity`,
-  `production`, and `created`;
-- `wf_cell_merge_plan`: `design_identity`, `target_identity`, `dims`,
-  `min_cell`, `max_weight_ratio`, `boundary`, `steps`, `final_cells`,
-  `identity`, and `created`;
-- `wf_weight_plan`: `design_identity`, `target_identity`, `dims`, `method`,
-  `settings`, `cell_plan`, `identity`, and `created`;
+  `groups`, `meta`, and `joint`, plus `evidence`, `demo_only`, `source_type`,
+  and `identity`;
+- `wf_cell_merge_plan`: `cells_before`, `cells_after`, `map`, `category_maps`,
+  `reasons`, `affected_share`, `unresolved_cells`,
+  `projected_max_weight_ratio`, `input_identities`, `settings`, `created`,
+  `package_version`, and `identity`;
+- `wf_weight_plan`: `method`, `settings`, `precheck`, `issues`, `ready`,
+  `cell_plan`, `input_identities`, `effective_identities`, `weights`, `created`,
+  `package_version`, and `identity`;
 - `wf_plan_approval`: `plan_identity`, `approver`, `role`, `note`,
-  `actor_type`, `identity`, and `created`;
+  `actor_type`, `attestation`, `created`, `package_version`, and `identity`;
 - `wf_weights`: `data`, `log`, `achieved`, and `provenance`, with immutable
   safety identities recorded in `provenance`; and
-- `wf_impact`: `summary`, `details`, `outcomes`, `weights_identity`, and
-  `created`.
+- `wf_impact`: `summary`, `weight_identity`, `outcomes`, `level`, `created`,
+  `package_version`, and `identity`.
 
 SHA-256 identity values are stable machine-readable links between artifacts.
 They are not proof that the source evidence is truthful.
@@ -126,13 +134,14 @@ Safety refusals inherit from `wf_error_safety` and `wf_error`. Their payload
 contains `code`, `severity`, `field`, `evidence`, and `next_actions`. Existing
 codes keep their meanings. Important WFC 2.0 codes include:
 
-- `unverified_target`, `demo_target_unsupported`, and `target_identity_changed`;
-- `design_identity_changed`, `plan_identity_changed`, and
-  `approval_identity_changed`;
-- `human_approval_required` and `approval_plan_mismatch`;
-- `inline_moments_unsupported`, `manual_target_unsupported`, and
+- `verified_target_required`, `demo_target_in_production`, and
+  `target_identity_invalid`;
+- `design_identity_invalid`, `weight_plan_invalid`, and
+  `plan_approval_mismatch`;
+- `human_approval_required` and `verified_weighting_inputs_required`;
+- `inline_moments_unsupported`, `design_role_override_unsupported`, and
   `manual_pipeline_unsupported`; and
-- `raw_weighting_input_unsupported`.
+- `target_design_roles_mismatch` and `pipeline_target_type_mismatch`.
 
 Human-facing wording may improve. Code, class, severity, field, evidence, and
 next-action keys are the programmatic contract for agents.
