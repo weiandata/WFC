@@ -1,3 +1,21 @@
+stability_root_file <- function(path) {
+  if (file.exists("DESCRIPTION")) {
+    return(path)
+  }
+  file.path("..", "..", path)
+}
+
+test_that("WFC 2.0 publishes an explicit safety contract", {
+  contract <- readLines(
+    stability_root_file("inst/stability/api-2.0.md"),
+    warn = FALSE
+  )
+
+  expect_true(any(grepl("Retained safe exports", contract, fixed = TRUE)))
+  expect_true(any(grepl("Removed interfaces", contract, fixed = TRUE)))
+  expect_true(any(grepl("No supported replacement", contract, fixed = TRUE)))
+})
+
 test_that("wf_rake is deterministic and invariant to row order", {
   fixture <- make_weightflow_fixture()
   sample <- fixture$sample

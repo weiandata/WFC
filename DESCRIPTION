@@ -1,6 +1,6 @@
 Package: WFC
 Title: Workflow-Oriented Survey Weight Calibration
-Version: 1.1.0
+Version: 2.0.0.9000
 Authors@R: c(
     person(given = "Kunxiang", family = "Ma", email = "makunxiang@weiandata.com", role = c("aut", "cre")),
     person("WEIAN DATA TECH (Beijing) Co., Ltd.", role = c("cph", "fnd"),
