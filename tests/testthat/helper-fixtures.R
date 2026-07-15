@@ -116,3 +116,27 @@ make_safe_workflow_fixture <- function(with_outcomes = FALSE) {
     analysis = if (with_outcomes) analysis else NULL
   )
 }
+
+make_safe_population_files <- function(population) {
+  path <- tempfile("wf-safe-population-")
+  dir.create(path)
+  data_file <- file.path(path, "population.csv")
+  source_file <- paste0(data_file, ".source.dcf")
+  utils::write.csv(population, data_file, row.names = FALSE)
+  source <- c(
+    publisher = "Synthetic fixture publisher",
+    dataset_title = "Synthetic population fixture",
+    citation = "Synthetic test fixture; not an external authority",
+    reference_period = "2026",
+    population_scope = "Synthetic adults",
+    retrieved_at = "2026-07-15",
+    license = "CC0-1.0",
+    checksum_algorithm = "sha256",
+    checksum = .wf_sha256_file(data_file),
+    transformation = "No transformation",
+    selected_before_outcomes = "true",
+    demo_only = "false"
+  )
+  writeLines(sprintf("%s: %s", names(source), source), source_file)
+  list(data_file = data_file, source_file = source_file)
+}

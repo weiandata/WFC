@@ -92,6 +92,7 @@ test_that("complete source evidence creates a verified target", {
   expect_false(x$demo_only)
   expect_identical(x$source_type, "population")
   expect_match(x$identity, "^[0-9a-f]{64}$")
+  expect_false(is.null(x$joint))
 })
 
 test_that("bad checksums block target import", {
@@ -209,7 +210,7 @@ test_that("blank templates require source details before import", {
 
 test_that("bundled CSV and Excel import examples remain usable", {
   skip_if_not_installed("openxlsx")
-  path <- test_path("..", "..", "inst", "extdata")
+  path <- system.file("extdata", package = "WFC")
   dims <- wf_dims(sex = c("F", "M"), age = c("18-34", "35+"))
   csv_file <- file.path(path, "safe-target-example.csv")
   xlsx_file <- file.path(path, "safe-target-example.xlsx")

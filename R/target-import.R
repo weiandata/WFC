@@ -398,7 +398,8 @@ wf_import_target <- function(data_file, source_file, dims, key_map, count,
     count = count,
     dims = dims,
     by = by,
-    by_key = by_key
+    by_key = by_key,
+    keep_joint = TRUE
   )
 
   .wf_verified_target(target, evidence, "population")
