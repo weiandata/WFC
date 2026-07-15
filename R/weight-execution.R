@@ -256,6 +256,8 @@ wf_execute_plan <- function(plan, approval, design, target) {
     approver = approval$approver,
     approver_role = approval$role,
     source_checksum = target$evidence$data_checksum,
+    source_data_checksum = target$evidence$data_checksum,
+    source_metadata_checksum = target$evidence$source_checksum,
     cell_plan_identity = plan$input_identities$cell_plan
   )
   weights$identity <- .wf_locked_weight_identity(weights)

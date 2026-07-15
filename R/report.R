@@ -251,6 +251,90 @@
   list(table = table, sections = sections)
 }
 
+#' Build report payload for a safe workflow.
+#'
+#' @param workflow A `wf_safe_workflow` object.
+#' @param audience Normalized report audience.
+#' @param lang Output language.
+#' @keywords internal
+#' @noRd
+.wf_report_safe_workflow <- function(workflow, audience, lang = NULL) {
+  if (!identical(workflow$identity, .wf_safe_workflow_identity(workflow))) {
+    .wf_safety_abort(
+      "safe_workflow_invalid",
+      "The safe workflow changed after its identity was recorded.",
+      "w"
+    )
+  }
+  ready <- isTRUE(workflow$plan$ready)
+  unresolved <- nrow(workflow$cell_plan$unresolved_cells)
+  next_action <- .wf_tr(
+    if (ready) "action_safe_review" else "action_safe_resolve",
+    lang = lang
+  )
+  table <- data.frame(
+    status = if (ready) "ready_for_human_review" else "blocked",
+    ready = ready,
+    method = workflow$plan$method,
+    affected_share = workflow$cell_plan$affected_share,
+    unresolved = unresolved,
+    next_action = next_action,
+    stringsAsFactors = FALSE
+  )
+  sections <- list()
+  if (identical(audience, "analyst")) {
+    source_fields <- workflow$target$evidence$fields
+    sections$source_evidence <- data.frame(
+      field = names(source_fields),
+      value = unname(unlist(source_fields, use.names = FALSE)),
+      stringsAsFactors = FALSE
+    )
+    sections$precheck_issues <- workflow$plan$issues
+    sections$cell_map <- workflow$cell_plan$map
+    sections$cell_reasons <- workflow$cell_plan$reasons
+    sections$cells_before <- workflow$cell_plan$cells_before
+    sections$cells_after <- workflow$cell_plan$cells_after
+  }
+  list(
+    table = table,
+    sections = sections,
+    provenance = list(
+      workflow_identity = workflow$identity,
+      design_identity = workflow$design$identity,
+      target_identity = workflow$target$identity,
+      cell_plan_identity = workflow$cell_plan$identity,
+      plan_identity = workflow$plan$identity
+    )
+  )
+}
+
+#' Build locked-weight identity evidence for reports.
+#'
+#' @param weights A `wf_locked_weights` object.
+#' @keywords internal
+#' @noRd
+.wf_report_lock_evidence <- function(weights) {
+  values <- list(
+    weights$design_identity,
+    weights$target_identity,
+    weights$plan_identity,
+    weights$approval_identity,
+    weights$identity,
+    weights$provenance$safety$source_data_checksum,
+    weights$provenance$safety$source_metadata_checksum
+  )
+  data.frame(
+    evidence = c(
+      "design", "target", "plan", "approval", "locked_weight",
+      "source_data", "source_metadata"
+    ),
+    identity = vapply(values, function(value) {
+      if (is.null(value) || !length(value)) NA_character_ else as.character(value[[1]])
+    }, character(1)),
+    stringsAsFactors = FALSE
+  )
+}
+
 #' Render a quality report as Markdown.
 #'
 #' @param report A `wf_quality_report`.
@@ -332,9 +416,11 @@
 #' report calibrated/composed weights or a blend result and render the same
 #' payload as Markdown or dependency-free HTML.
 #'
-#' @param w A `wf_weights` or `wf_blend_result` object.
+#' @param w A `wf_weights`, `wf_blend_result`, `wf_safe_workflow`, or
+#'   `wf_impact` object.
 #' @param target Optional `wf_target` for margin-residual diagnostics.
-#' @param audience Report projection: `"manager"` or `"analyst"`.
+#' @param audience Report projection: `"manager"`/`"decision"` for a compact
+#'   decision view or `"analyst"`/`"statistician"` for full detail.
 #' @param lang Output language. Resolution follows explicit argument,
 #'   `options(wfc.lang)`, session locale, then English fallback.
 #' @param output Return a structured object, Markdown, or standalone HTML.
@@ -355,11 +441,19 @@
 #' weights <- wf_rake(wfc_example$sample, target, id = "id")
 #' wf_report(weights, target, audience = "manager")
 wf_report <- function(w, target = NULL,
-                      audience = c("manager", "analyst"),
+                      audience = c(
+                        "manager", "analyst", "decision", "statistician"
+                      ),
                       lang = NULL,
                       output = c("object", "markdown", "html"),
                       file = NULL) {
-  audience <- match.arg(audience)
+  requested_audience <- match.arg(audience)
+  audience <- switch(
+    requested_audience,
+    decision = "manager",
+    statistician = "analyst",
+    requested_audience
+  )
   output <- match.arg(output)
   language <- .wf_lang(lang)
   if (!is.null(file) &&
@@ -369,11 +463,53 @@ wf_report <- function(w, target = NULL,
   if (output == "object" && !is.null(file)) {
     wf_abort("`file` requires output = 'markdown' or 'html'.", "wf_error_input")
   }
-  if (!is.null(target) && !inherits(target, "wf_target")) {
+  safe_report <- inherits(w, c("wf_safe_workflow", "wf_impact"))
+  if (safe_report && !is.null(target)) {
+    .wf_safety_abort(
+      "report_target_not_allowed",
+      "Safe workflow and impact reports use only their recorded evidence.",
+      "target"
+    )
+  }
+  if (!safe_report && !is.null(target) && !inherits(target, "wf_target")) {
     wf_abort("`target` must be NULL or a wf_target object.", "wf_error_input")
   }
 
-  if (inherits(w, "wf_weights")) {
+  if (inherits(w, "wf_safe_workflow")) {
+    payload <- .wf_report_safe_workflow(w, audience, language)
+    table <- payload$table
+    sections <- payload$sections
+    source_type <- "safe_workflow"
+    provenance <- payload$provenance
+  } else if (inherits(w, "wf_impact")) {
+    if (!identical(w$identity, .wf_impact_identity(w))) {
+      .wf_safety_abort(
+        "impact_identity_invalid",
+        "The impact result changed after its identity was recorded.",
+        "w"
+      )
+    }
+    table <- if (identical(audience, "manager")) {
+      w$summary[c("outcome", "level", "unweighted", "weighted", "difference")]
+    } else {
+      w$summary
+    }
+    sections <- list()
+    source_type <- "impact"
+    provenance <- list(
+      impact_identity = w$identity,
+      locked_weight_identity = w$weight_identity,
+      confidence_level = w$level
+    )
+  } else if (inherits(w, "wf_weights")) {
+    if (inherits(w, "wf_locked_weights") &&
+        !identical(w$identity, .wf_locked_weight_identity(w))) {
+      .wf_safety_abort(
+        "locked_weights_invalid",
+        "The locked weights changed after their identity was recorded.",
+        "w"
+      )
+    }
     diagnostics <- wf_diagnose(w, target = target)$table
     table <- if (audience == "manager") {
       .wf_report_manager_weights(diagnostics, language)
@@ -391,15 +527,25 @@ wf_report <- function(w, target = NULL,
       )
     }
     sections <- .wf_report_weight_sections(w)
-    source_type <- "weights"
+    if (inherits(w, "wf_locked_weights")) {
+      sections$lock_evidence <- .wf_report_lock_evidence(w)
+      source_type <- "locked_weights"
+    } else {
+      source_type <- "weights"
+    }
+    provenance <- w$provenance
   } else if (inherits(w, "wf_blend_result")) {
     payload <- .wf_report_blend(w, audience, language)
     table <- payload$table
     sections <- payload$sections
     source_type <- "blend"
+    provenance <- w$provenance
   } else {
     wf_abort(
-      "`w` must be a wf_weights or wf_blend_result object.",
+      paste(
+        "`w` must be weights, a blend result, a safe workflow,",
+        "or a post-lock impact result."
+      ),
       "wf_error_input"
     )
   }
@@ -410,9 +556,10 @@ wf_report <- function(w, target = NULL,
       table = table,
       sections = sections,
       audience = audience,
+      requested_audience = requested_audience,
       language = language,
       source_type = source_type,
-      provenance = w$provenance
+      provenance = provenance
     ),
     class = "wf_quality_report"
   )

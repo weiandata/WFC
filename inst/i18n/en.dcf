@@ -2,6 +2,8 @@ report_title: Weighting quality report
 report_audience: Audience
 audience_manager: manager
 audience_analyst: analyst
+audience_decision: decision maker
+audience_statistician: statistician
 verdict_green: publishable separately
 verdict_yellow: usable with caveats; prefer aggregated publication
 verdict_red: do not publish separately; merge or remediate
@@ -11,6 +13,8 @@ action_weights_red: do not publish separately; merge or remediate
 action_blend_green: publishable separately
 action_blend_yellow: usable with caveats; inspect lambda sensitivity
 action_blend_red: do not publish separately; one source lacks support
+action_safe_review: request independent human review before execution
+action_safe_resolve: resolve blocking checks; do not approve or execute
 section_propensity_overlap: Propensity overlap
 section_propensity_quantiles: Propensity quantiles
 section_propensity_balance: Propensity covariate balance
@@ -20,6 +24,13 @@ section_pipeline_stages: Pipeline stages
 section_blend_lambda: Blend lambda
 section_blend_sensitivity: Blend sensitivity
 section_blend_source_support: Blend source support
+section_source_evidence: External source evidence
+section_precheck_issues: Pre-calibration checks
+section_cell_map: Original-to-final cell map
+section_cell_reasons: Cell merge reasons
+section_cells_before: Cells before merging
+section_cells_after: Cells after merging
+section_lock_evidence: Locked-weight identity evidence
 column_group: Group
 column_n: Sample size
 column_ess: Effective sample size
@@ -56,6 +67,23 @@ column_smd_weighted: Weighted SMD
 column_stage: Stage
 column_label: Label
 column_method: Method
+column_status: Workflow status
+column_ready: Ready for review
+column_affected_share: Affected sample share
+column_unresolved: Unresolved cell count
+column_next_action: Required next action
+column_field: Evidence field
+column_value: Evidence value
+column_evidence: Evidence type
+column_identity: SHA-256 identity
+column_outcome: Outcome
+column_unweighted: Unweighted estimate
+column_weighted: Weighted estimate
+column_difference: Weighted difference
+column_kish_ess: Kish effective sample size
+column_se: Normal-approximation standard error
+column_conf_low: Confidence interval lower bound
+column_conf_high: Confidence interval upper bound
 plot_group_title: Group %s
 plot_weight: weight
 plot_design_effect: design effect

@@ -146,3 +146,32 @@ make_locked_safe_weights <- function(fixture = make_safe_workflow_fixture()) {
   approval <- wf_approve_plan(plan, "Test reviewer", "statistician")
   wf_execute_plan(plan, approval, fixture$design, fixture$target)
 }
+
+make_safe_review_workflow <- function(fixture = make_safe_workflow_fixture()) {
+  cell_plan <- wf_plan_cells(
+    fixture$design,
+    fixture$target,
+    fixture$dims,
+    min_cell = 1,
+    max_weight_ratio = 10
+  )
+  plan <- wf_plan_weights(
+    fixture$design,
+    fixture$target,
+    fixture$dims,
+    min_cell = 1,
+    cell_plan = cell_plan
+  )
+  workflow <- list(
+    design = fixture$design,
+    target = fixture$target,
+    cell_plan = cell_plan,
+    plan = plan,
+    weights = NULL,
+    created = .wf_iso_time(),
+    package_version = .wf_package_version()
+  )
+  workflow$identity <- .wf_safe_workflow_identity(workflow)
+  class(workflow) <- "wf_safe_workflow"
+  workflow
+}
