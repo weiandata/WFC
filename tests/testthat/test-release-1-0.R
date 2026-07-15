@@ -1,5 +1,5 @@
-test_that("2.0 development preserves the historical 1.0 API freeze", {
-  expect_equal(as.character(utils::packageVersion("WFC")), "2.0.0.9000")
+test_that("2.0 release preserves the historical 1.0 API freeze", {
+  expect_equal(as.character(utils::packageVersion("WFC")), "2.0.0")
 
   freeze <- system.file("stability/api-freeze.md", package = "WFC")
   expect_true(nzchar(freeze))

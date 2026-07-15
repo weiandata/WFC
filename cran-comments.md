@@ -8,20 +8,22 @@
 
 ## Release
 
-This is the initial CRAN submission for WFC, now at version 1.1.0. The package
+This is the initial CRAN submission for WFC, now at version 2.0.0. The package
 was previously developed under the name `weightflow`, but that package name is
 already in use on CRAN by an unrelated package. Version 1.0.0 froze the public
 WFC core API. Version 1.1.0 adds verified external target import, outcome-blind
 planning, identity-bound human approval, locked-weight execution, post-lock
-impact assessment, and auditable reports. Subjective legacy target controls warn
-in 1.1 and are scheduled for removal in 2.0.0.
+impact assessment, and auditable reports. Version 2.0.0 makes that verified
+workflow mandatory for weight construction and removes subjective manual
+targets, target shrinkage, inline moment targets, manual pipeline targets, and
+run-time margin injection without a compatibility switch.
 
 WFC is distributed under GPL (>= 2); `inst/COPYRIGHTS` records the copyright
 boundary for separately distributed optional dependencies.
 
 ## R CMD check results
 
-Local `R CMD check WFC_1.1.0.tar.gz --as-cran`:
+Local `R CMD check WFC_2.0.0.tar.gz --as-cran`:
 
 * 0 errors
 * 0 warnings
@@ -40,18 +42,23 @@ There are no downstream dependencies because this is a first submission.
 
 ## Additional verification
 
+* Twelve adversarial checks cover manual margins, pass-rate and outcome targets,
+  unverified and demo targets, selection after outcomes, stale approvals,
+  changed design data, AI-agent approval, and raw public weighting calls. Every
+  attempt stopped before a weighting engine was invoked.
 * A deterministic controlled validation covers supported undercoverage,
   sparse/empty cells, tampered targets, extreme base weights, outcome isolation,
   bounds, and total conservation. With `survey` 4.5, WFC's weighted margins
   differed from the independent `survey` tables by at most `7.8e-12`.
 * CI installs `survey` and makes the numerical reference comparison mandatory.
-  Independent package-level statistical review by Jinyan Zhu and accountable
-  release approval by Kunxiang Ma were completed separately from the software
-  checks and are recorded in the validation report.
+  WFC 2.0 independent statistical review and accountable release approval remain
+  pending and are separate from these software checks. Jinyan Zhu's review and
+  Kunxiang Ma's approval recorded for WFC 1.1 are not reused for WFC 2.0.
 * CI enforces at least 80% line coverage.
-* Guided-workflow tests cover raw and ready targets, raking, bounded logit,
-  post-stratification, declared remediation, trim outcomes, interactive refusal,
-  input immutability, localized narration, and stable decision-ledger keys.
+* The full source-tree suite passed 1,110 checks with `survey` available. Verified
+  boundary tests cover raking, bounded logit, post-stratification, declared
+  remediation, trim review, input immutability, localized narration, and stable
+  decision-ledger keys.
 * English and Simplified Chinese catalogs are checked for key parity. Plot
   methods are exercised on non-interactive PDF devices, and the report suite
   verifies localized structured, Markdown, escaped standalone HTML, and file

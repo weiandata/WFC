@@ -11,6 +11,7 @@ test_that("migration guidance gives removed target behavior no workaround", {
   } else {
     file.path("..", "..", "docs/migration/wfc-1-to-2.md")
   }
+  skip_if_not(file.exists(path), "migration guide is not installed")
   guidance <- readLines(path, warn = FALSE)
 
   expect_true(any(grepl("wf_target_manual()", guidance, fixed = TRUE)))

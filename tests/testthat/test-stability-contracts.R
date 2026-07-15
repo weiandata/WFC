@@ -1,4 +1,8 @@
 stability_root_file <- function(path) {
+  installed <- system.file(sub("^inst/", "", path), package = "WFC")
+  if (nzchar(installed)) {
+    return(installed)
+  }
   if (file.exists("DESCRIPTION")) {
     return(path)
   }

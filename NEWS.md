@@ -1,4 +1,4 @@
-# WFC 2.0.0 development
+# WFC 2.0.0
 
 WFC 2.0 makes the verified, outcome-blind workflow the only supported path to
 weight construction. This is a deliberate breaking release: unsafe 1.x

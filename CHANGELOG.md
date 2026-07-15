@@ -11,6 +11,8 @@ This file tracks repository-level milestones.
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-07-15
+
 ### Removed
 
 - Remove subjective manual targets, target shrinkage, inline moment targets,
