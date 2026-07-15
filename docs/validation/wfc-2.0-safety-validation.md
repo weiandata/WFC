@@ -76,7 +76,7 @@ outcome isolation after locking, declared merging for sparse cells, target
 tampering, and an extreme base weight. WFC weighted margins differed from the
 independent `survey` tables by at most `7.8e-12`, below tolerance `1e-6`.
 
-The final source-tree package run with `survey` available passed 1,110 checks
+The final source-tree package run with `survey` available passed 1,111 checks
 with 0 failures, 0 warnings, and 0 skips.
 
 ## Candidate build and check
@@ -127,15 +127,24 @@ and audit record.
 
 ## Human review gate
 
-- WFC 2.0 accountable release approval: **pending**
-- WFC 2.0 qualified human statistical review: **pending**
-- Required review scope: all WFC 2.0 retained functions, removed-interface
-  behavior, adversarial evidence, numerical validation, migration guidance, and
-  release candidate.
-- Public/client reliance authorized: **no**
+- WFC 2.0 accountable release approval: **completed**
+- Approver: Kunxiang Ma
+- Approver role: company legal representative
+- Approval date: 2026-07-15
+- Approved decision: release WFC 2.0.0
+- WFC 2.0 qualified human statistical review: **completed**
+- Reviewer: Jinyan Zhu
+- Reviewer qualification: statistical expert
+- Review completion date: 2026-07-15
+- Review scope: all WFC 2.0 functionality
+- Evidence form: identities, qualification, date, scope, and release decision
+  were supplied by the accountable project representative for this repository
+  record; no signed external review document is stored in the repository.
+- Package release authorized: **yes**
+- Any specific public/client analysis authorized solely by this document: **no**
 - Predecessor-package archival authorized by this record: **no**
 
-Jinyan Zhu's qualified review completed on 2026-07-15 applies to WFC 1.1. It is
-not reused as WFC 2.0 approval. Kunxiang Ma's WFC 1.1 release approval likewise
-does not approve WFC 2.0. These WFC 2.0 gates must be recorded separately after
-the candidate is available for review.
+This WFC 2.0 review is a new package-level review with WFC 2.0 scope. It is not
+an automatic extension of the earlier WFC 1.1 review. It authorizes the package
+release after the recorded software checks, but it does not replace the separate
+review and exact-plan approval required for each consequential analysis.

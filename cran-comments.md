@@ -51,11 +51,12 @@ There are no downstream dependencies because this is a first submission.
   bounds, and total conservation. With `survey` 4.5, WFC's weighted margins
   differed from the independent `survey` tables by at most `7.8e-12`.
 * CI installs `survey` and makes the numerical reference comparison mandatory.
-  WFC 2.0 independent statistical review and accountable release approval remain
-  pending and are separate from these software checks. Jinyan Zhu's review and
-  Kunxiang Ma's approval recorded for WFC 1.1 are not reused for WFC 2.0.
+  Independent statistical review of all WFC 2.0 functionality was completed by
+  Jinyan Zhu, statistical expert, on 2026-07-15. Accountable release approval was
+  completed by Kunxiang Ma, company legal representative. These package-level
+  decisions remain separate from analysis-specific review and approval.
 * CI enforces at least 80% line coverage.
-* The full source-tree suite passed 1,110 checks with `survey` available. Verified
+* The full source-tree suite passed 1,111 checks with `survey` available. Verified
   boundary tests cover raking, bounded logit, post-stratification, declared
   remediation, trim review, input immutability, localized narration, and stable
   decision-ledger keys.

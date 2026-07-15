@@ -49,4 +49,22 @@ test_that("WFC 2.0 adversarial validation evidence is complete", {
   expect_match(evidence, "engine_calls_before_refusal", fixed = TRUE)
   expect_match(evidence, "does not prove source truth", fixed = TRUE)
   expect_match(evidence, "qualified human statistical review", fixed = TRUE)
+  release_evidence <- c(
+    "WFC 2.0 accountable release approval: **completed**",
+    "WFC 2.0 qualified human statistical review: **completed**",
+    "Reviewer: Jinyan Zhu",
+    "Reviewer qualification: statistical expert",
+    "Review completion date: 2026-07-15",
+    "Review scope: all WFC 2.0 functionality",
+    "Approver: Kunxiang Ma",
+    "Approver role: company legal representative",
+    "Package release authorized: **yes**"
+  )
+  expect_true(all(vapply(
+    release_evidence,
+    grepl,
+    logical(1),
+    x = evidence,
+    fixed = TRUE
+  )))
 })
