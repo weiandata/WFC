@@ -45,8 +45,9 @@ There are no downstream dependencies because this is a first submission.
   bounds, and total conservation. With `survey` 4.5, WFC's weighted margins
   differed from the independent `survey` tables by at most `7.8e-12`.
 * CI installs `survey` and makes the numerical reference comparison mandatory.
-  Independent qualified statistical review remains a separate pending gate and
-  is not represented by software test results.
+  Independent package-level statistical review by Jinyan Zhu and accountable
+  release approval by Kunxiang Ma were completed separately from the software
+  checks and are recorded in the validation report.
 * CI enforces at least 80% line coverage.
 * Guided-workflow tests cover raw and ready targets, raking, bounded logit,
   post-stratification, declared remediation, trim outcomes, interactive refusal,

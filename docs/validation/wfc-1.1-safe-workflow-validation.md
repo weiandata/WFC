@@ -4,8 +4,9 @@
 
 This document records software verification evidence for the WFC 1.1 safe
 workflow. It does **not** certify a real survey, population source, weighting
-decision, or public/client use. Accountable release approval and independent
-review by a qualified survey statistician are separate gates and remain pending.
+decision, or a specific public/client use. Accountable release approval and
+independent review by a qualified statistical expert were completed separately
+from the software checks and are recorded below.
 
 The approval objects created by the validation runner use synthetic names and
 test-only data solely to exercise the identity and execution controls. They are
@@ -107,15 +108,27 @@ do not establish estimator performance for every sampling design, nonresponse
 mechanism, population misspecification, rare-category structure, variance
 estimator, or real source-data quality problem.
 
-Before public or client reliance, an accountable person must verify the external
-source and transformation, review the proposed category merges and diagnostics,
-approve the exact plan, and retain the audit record. A qualified survey
-statistician must independently review the assumptions, simulation coverage,
-numerical tolerances, and proposed real-use validation. Those reviews are not
-complete merely because package tests or this script pass.
+Before public or client reliance on a specific analysis, an accountable person
+must verify that analysis's external source and transformation, review the
+proposed category merges and diagnostics, approve the exact plan, and retain the
+audit record. The package-level review recorded below does not replace those
+analysis-specific controls. Reviews are never complete merely because package
+tests or this script pass.
 
 ## Human review gate
 
-- Accountable release approval: **pending**
-- Independent qualified statistical review: **pending**
-- Authorized for public/client reliance by this document: **no**
+- Accountable release approval: **completed**
+- Approver: Kunxiang Ma
+- Approver role: company legal representative
+- Approval date: 2026-07-15
+- Approved decision: release WFC 1.1.0 and proceed to the next controlled stage
+- Independent qualified statistical review: **completed**
+- Reviewer: Jinyan Zhu
+- Reviewer qualification: statistical expert
+- Review completion date: 2026-07-15
+- Review scope: all WFC 1.1 functionality
+- Evidence form: identities, roles, date, scope, and decision were supplied by
+  the accountable project representative for this repository record; no signed
+  external review document is stored in the repository.
+- Package release authorized: **yes**
+- Any specific public/client analysis authorized solely by this document: **no**
