@@ -184,7 +184,7 @@ git commit -m "feat(safety): add strict design-only data objects"
 
 ### Task 3: Verified target import and examples
 
-**Files:** Create `R/target-import.R`, `tests/testthat/test-safety-target-import.R`, `inst/extdata/safe-target-example.csv`, `inst/extdata/safe-target-example.xlsx`, and `inst/extdata/safe-target-example.source.dcf`; modify `DESCRIPTION` and `.gitignore`.
+**Files:** Create `R/target-import.R`, `tests/testthat/test-safety-target-import.R`, `inst/extdata/safe-target-example.csv`, `inst/extdata/safe-target-example.xlsx`, and one `.source.dcf` companion per data file; modify `DESCRIPTION` and `.gitignore`.
 
 **Interfaces:** Produces `wf_target_template(file, dims, by = NULL, example = FALSE)`, `wf_import_target(data_file, source_file, dims, key_map, count, by = NULL, by_key = NULL, production = TRUE)`, and `wf_import_reference(data_file, source_file, dims, feature, by = NULL, production = TRUE)`. Both import functions return `c("wf_verified_target", "wf_target")` with `evidence`, `identity`, `demo_only`, and `source_type`.
 
@@ -244,7 +244,8 @@ silently ignored.
 - [ ] **Step 3: Implement templates and committed synthetic files**
 
 `wf_target_template()` writes the declared `by`, dimensions, and `count` columns
-plus a sibling source DCF. `example = TRUE` writes synthetic rows and
+plus a source DCF named by appending `.source.dcf` to the full data filename.
+This keeps CSV and XLSX checksums separate. `example = TRUE` writes synthetic rows and
 `demo_only: true`; blank templates write zero rows and `demo_only: false`. Add
 `openxlsx` to Suggests and `!inst/extdata/*.xlsx` after `*.xlsx` in `.gitignore`.
 Generate CSV and XLSX from identical synthetic data and test identical margins.

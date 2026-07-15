@@ -38,6 +38,7 @@ Suggests:
     covr,
     generics,
     knitr,
+    openxlsx,
     rmarkdown,
     survey,
     testthat (>= 3.0.0)

@@ -1,0 +1,12 @@
+publisher: WFC synthetic example
+dataset_title: Synthetic population target example
+citation: WFC package synthetic example; not an external authority
+reference_period: synthetic
+population_scope: synthetic demonstration population
+retrieved_at: 2026-07-15
+license: CC0-1.0
+checksum_algorithm: sha256
+checksum: fcb8a35aa6a7ca0090305f0f88fb741b88d67e3409691c3e697e89bdeb5458c6
+transformation: Generated Cartesian example with equal counts
+selected_before_outcomes: true
+demo_only: true
