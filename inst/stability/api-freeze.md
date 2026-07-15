@@ -150,3 +150,52 @@ WFCstudio beta targets WFC `>= 1.0.0, < 2.0.0`. It may call exported WFC APIs
 and render WFC objects, but it must not implement statistical engines, suppress
 blocking WFC conditions, rename stable keys, or add hard dependencies to WFC.
 The detailed sibling-package contract is in `inst/design/wfcstudio_contract.md`.
+
+## WFC 1.1 Additive Safety API
+
+WFC 1.1 adds the following exported interfaces without changing the frozen 1.0
+numeric contracts:
+
+```r
+wf_prepare_design(data, id, calibration, base_weight = NULL,
+                  strata = NULL, clusters = NULL, fpc = NULL)
+wf_target_template(file, dims, by = NULL, example = FALSE)
+wf_import_target(data_file, source_file, dims, key_map, count,
+                 by = NULL, by_key = NULL, production = TRUE)
+wf_import_reference(data_file, source_file, dims, feature,
+                    by = NULL, production = TRUE)
+wf_plan_cells(design, target, dims, min_cell = 5,
+              max_weight_ratio = 4, boundary = target$by, ladder = NULL)
+wf_plan_weights(design, target, dims,
+                method = c("raking", "logit", "poststrat"),
+                bounds = c(0.3, 3), min_cell = 5, cell_plan = NULL)
+wf_approve_plan(plan, approver, role, note = NULL, actor_type = "human")
+wf_execute_plan(plan, approval, design, target)
+wf_guided_plan(data, id, calibration, dims, target_file, source_file,
+               source_type = c("population", "reference"), key_map = NULL,
+               count = NULL, feature = NULL, ...)
+wf_guided_execute(workflow, approval)
+wf_attach_weights(data, weights, id, weight_name = ".weight")
+wf_assess_impact(weights, data, id, outcomes, level = 0.95)
+```
+
+`wf_report()` additionally accepts `audience = "decision"` as an alias for
+`"manager"` and `audience = "statistician"` as an alias for `"analyst"`. Audit
+exports use `wfc_audit_v2`, preserving the v1 fields and adding nullable safety
+identity fields.
+
+The new safety objects add stable SHA-256 `identity` fields. Safety errors use
+class `wf_error_safety` and a machine payload with `code`, `severity`, `field`,
+`evidence`, and `next_actions`.
+
+The following 1.0 interfaces remain numerically compatible in 1.1 but warn with
+`wf_warning_deprecated` on every use and are scheduled for removal in 2.0.0:
+
+- manual target margins;
+- target shrinkage;
+- inline entropy-balancing moment targets;
+- manual pipeline target declarations and runtime margin injection.
+
+Their warning payload adds `removal` and `risk_code` to the frozen `feature` and
+`replacement` fields. The verified workflow has no bypass, self-approval,
+automatic limit widening, automatic relaxation, or silent method-switch path.

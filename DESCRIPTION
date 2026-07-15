@@ -1,6 +1,6 @@
 Package: WFC
 Title: Workflow-Oriented Survey Weight Calibration
-Version: 1.0.0
+Version: 1.1.0
 Authors@R: c(
     person(given = "Kunxiang", family = "Ma", email = "makunxiang@weiandata.com", role = c("aut", "cre")),
     person("WEIAN DATA TECH (Beijing) Co., Ltd.", role = c("cph", "fnd"),
@@ -9,8 +9,9 @@ Author: Kunxiang Ma [aut, cre], WEIAN DATA TECH (Beijing) Co., Ltd. [cph, fnd]
 Maintainer: Kunxiang Ma <makunxiang@weiandata.com>
 Description: Provides a disciplined precheck, execution, and diagnostics workflow
     for survey weighting and raking with schema-agnostic dimensions and canonical
-    target objects, including an auditable guided workflow and bilingual
-    human-facing reports. Converts calibrated and replicate weights into standard
+    target objects, including a verified-target, outcome-blind planning workflow,
+    human approval before weight locking, and bilingual reports for decision and
+    statistical audiences. Converts calibrated and replicate weights into standard
     survey designs, provides optional broom-style result projections, and records
     serializable production pipeline provenance. Supports soft calibration with
     auditable margin relaxation and entropy balancing for exact moment matching,
@@ -27,6 +28,7 @@ Encoding: UTF-8
 Depends:
     R (>= 3.6.0)
 Imports:
+    digest,
     parallel,
     stats,
     utils
@@ -37,6 +39,7 @@ Suggests:
     covr,
     generics,
     knitr,
+    openxlsx,
     rmarkdown,
     survey,
     testthat (>= 3.0.0)

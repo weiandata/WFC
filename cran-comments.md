@@ -2,34 +2,51 @@
 
 ## Test environments
 
-* Local: macOS Tahoe 26.5.1, R 4.6.0 (aarch64-apple-darwin23)
+* Local: macOS Tahoe 26.5.2, R 4.6.0 (aarch64-apple-darwin23)
 * GitHub Actions: R devel, release, and oldrel-1 on Linux; R release on
   macOS and Windows
 
 ## Release
 
-This is the initial CRAN submission for WFC 1.0.0. The package was previously
-developed under the name `weightflow`, but that package name is already in use
-on CRAN by an unrelated package. The 1.0.0 release freezes the public WFC core
-API and documents the compatibility policy in `inst/stability/api-freeze.md`.
+This is the initial CRAN submission for WFC, now at version 1.1.0. The package
+was previously developed under the name `weightflow`, but that package name is
+already in use on CRAN by an unrelated package. Version 1.0.0 froze the public
+WFC core API. Version 1.1.0 adds verified external target import, outcome-blind
+planning, identity-bound human approval, locked-weight execution, post-lock
+impact assessment, and auditable reports. Subjective legacy target controls warn
+in 1.1 and are scheduled for removal in 2.0.0.
+
 WFC is distributed under GPL (>= 2); `inst/COPYRIGHTS` records the copyright
 boundary for separately distributed optional dependencies.
 
 ## R CMD check results
 
-Local `R CMD check --as-cran --no-manual`:
+Local `R CMD check WFC_1.1.0.tar.gz --as-cran`:
 
 * 0 errors
 * 0 warnings
-* 1 note
+* 2 notes
 
-The note is the expected "New submission" note. All package, code,
-documentation, example, test, and vignette checks completed. There are no
-downstream dependencies because this is a first submission.
+The notes were:
+
+1. `New submission`. This is expected because WFC has not previously been
+   published on CRAN.
+2. `Skipping checking HTML validation: 'tidy' doesn't look like recent enough
+   HTML Tidy.` The local checker completed the PDF manual and all package,
+   documentation, example, test, and vignette checks. This note concerns the
+   local external HTML Tidy executable rather than generated R documentation.
+
+There are no downstream dependencies because this is a first submission.
 
 ## Additional verification
 
-* The test suite includes an optional numerical oracle against `survey::rake()`.
+* A deterministic controlled validation covers supported undercoverage,
+  sparse/empty cells, tampered targets, extreme base weights, outcome isolation,
+  bounds, and total conservation. With `survey` 4.5, WFC's weighted margins
+  differed from the independent `survey` tables by at most `7.8e-12`.
+* CI installs `survey` and makes the numerical reference comparison mandatory.
+  Independent qualified statistical review remains a separate pending gate and
+  is not represented by software test results.
 * CI enforces at least 80% line coverage.
 * Guided-workflow tests cover raw and ready targets, raking, bounded logit,
   post-stratification, declared remediation, trim outcomes, interactive refusal,

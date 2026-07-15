@@ -228,6 +228,15 @@ wf_target_manual <- function(margins, dims,
                              value_col = "value",
                              by = NULL, group_col = by,
                              totals = NULL, mode = "manual") {
+  .wf_warn_deprecated(
+    paste(
+      "Manual target margins are deprecated because subjective targets can",
+      "be selected to steer results; import a verified external target instead."
+    ),
+    feature = "wf_target_manual()",
+    replacement = "wf_import_target() or wf_import_reference()",
+    risk_code = "subjective_manual_target"
+  )
   if (!is.data.frame(margins)) {
     wf_abort("`margins` must be a data.frame.", "wf_error_input")
   }
@@ -331,6 +340,15 @@ wf_target_manual <- function(margins, dims,
 #' )
 #' wf_target_shrink(local, reference, lambda = 0.25)
 wf_target_shrink <- function(target, reference, lambda, groups = NULL) {
+  .wf_warn_deprecated(
+    paste(
+      "Target shrinkage is deprecated because its mixing choice can steer",
+      "results; use one preselected verified external target instead."
+    ),
+    feature = "wf_target_shrink()",
+    replacement = "wf_import_target() or wf_import_reference()",
+    risk_code = "subjective_target_shrinkage"
+  )
   if (!inherits(target, "wf_target") || !inherits(reference, "wf_target")) {
     wf_abort("`target` and `reference` must be wf_target objects.", "wf_error_input")
   }

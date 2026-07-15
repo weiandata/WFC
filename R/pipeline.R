@@ -313,6 +313,17 @@
 #' )
 wf_pipeline <- function(target, stages, validate = NULL) {
   target <- .wf_pipeline_target_spec(target)
+  if (identical(target$mode, "manual")) {
+    .wf_warn_deprecated(
+      paste(
+        "Manual pipeline targets are deprecated because subjective margins",
+        "can steer results; use verified external target import instead."
+      ),
+      feature = "wf_pipeline(target = list(mode = 'manual'))",
+      replacement = "wf_guided_plan() with a verified target file",
+      risk_code = "subjective_manual_pipeline_target"
+    )
+  }
   stages <- .wf_pipeline_stage_spec(stages)
   validate <- .wf_pipeline_validation_spec(validate)
   hash_input <- list(target = target, stages = stages, validate = validate)
@@ -695,6 +706,17 @@ wf_run <- function(spec, sample, dims = NULL, population = NULL,
   }
   if (!is.data.frame(sample) || nrow(sample) == 0) {
     wf_abort("`sample` must be a non-empty data frame.", "wf_error_input")
+  }
+  if (!is.null(margins)) {
+    .wf_warn_deprecated(
+      paste(
+        "Runtime manual margins are deprecated because run-time target choices",
+        "can steer results; import and review a verified target first."
+      ),
+      feature = "wf_run(..., margins =)",
+      replacement = "wf_guided_plan() with a verified target file",
+      risk_code = "subjective_runtime_margins"
+    )
   }
 
   calibrate <- spec$stages$calibrate
@@ -1235,13 +1257,128 @@ print.wf_validation <- function(x, ...) {
   ledger <- NULL
   diagnostics <- NULL
   object_class <- class(x)
+  weights <- NULL
   if (inherits(x, "wf_autoweigh_result")) {
     ledger <- x$ledger
     diagnostics <- x$diagnostics
     weights <- x$weights
-  } else {
+  } else if (inherits(x, "wf_weights")) {
     weights <- x
   }
+
+  identities <- list(
+    design = NULL,
+    target = NULL,
+    cell_plan = NULL,
+    plan = NULL,
+    approval = NULL,
+    locked_weight = NULL,
+    source = NULL,
+    source_data = NULL,
+    impact = NULL
+  )
+  if (inherits(x, "wf_safe_workflow")) {
+    if (!identical(x$identity, .wf_safe_workflow_identity(x))) {
+      .wf_safety_abort(
+        "safe_workflow_invalid",
+        "The safe workflow changed after its identity was recorded.",
+        "x"
+      )
+    }
+    identities$design <- x$design$identity
+    identities$target <- x$target$identity
+    identities$cell_plan <- x$cell_plan$identity
+    identities$plan <- x$plan$identity
+    identities$source <- x$target$evidence$source_checksum
+    identities$source_data <- x$target$evidence$data_checksum
+  } else if (inherits(x, "wf_locked_weights")) {
+    if (!identical(x$identity, .wf_locked_weight_identity(x))) {
+      .wf_safety_abort(
+        "locked_weights_invalid",
+        "The locked weights changed after their identity was recorded.",
+        "x"
+      )
+    }
+    identities$design <- x$design_identity
+    identities$target <- x$target_identity
+    identities$cell_plan <- x$provenance$safety$cell_plan_identity
+    identities$plan <- x$plan_identity
+    identities$approval <- x$approval_identity
+    identities$locked_weight <- x$identity
+    identities$source <- x$provenance$safety$source_metadata_checksum
+    identities$source_data <- x$provenance$safety$source_data_checksum
+  } else if (inherits(x, "wf_impact")) {
+    if (!identical(x$identity, .wf_impact_identity(x))) {
+      .wf_safety_abort(
+        "impact_identity_invalid",
+        "The impact result changed after its identity was recorded.",
+        "x"
+      )
+    }
+    identities$locked_weight <- x$weight_identity
+    identities$impact <- x$identity
+  } else if (inherits(x, "wf_plan_approval")) {
+    if (!identical(x$identity, .wf_plan_approval_identity(x))) {
+      .wf_safety_abort(
+        "plan_approval_invalid",
+        "The approval changed after its identity was recorded.",
+        "x"
+      )
+    }
+    identities$plan <- x$plan_identity
+    identities$approval <- x$identity
+  } else if (inherits(x, "wf_weight_plan")) {
+    if (!identical(x$identity, .wf_weight_plan_identity(x))) {
+      .wf_safety_abort(
+        "weight_plan_invalid",
+        "The weight plan changed after its identity was recorded.",
+        "x"
+      )
+    }
+    identities$design <- x$input_identities$design
+    identities$target <- x$input_identities$target
+    identities$cell_plan <- x$input_identities$cell_plan
+    identities$plan <- x$identity
+  } else if (inherits(x, "wf_cell_merge_plan")) {
+    if (!identical(x$identity, .wf_cell_plan_identity(x))) {
+      .wf_safety_abort(
+        "cell_plan_invalid",
+        "The cell plan changed after its identity was recorded.",
+        "x"
+      )
+    }
+    identities$design <- x$input_identities$design
+    identities$target <- x$input_identities$target
+    identities$cell_plan <- x$identity
+  } else if (inherits(x, "wf_verified_target")) {
+    if (!identical(x$identity, .wf_verified_target_identity(x))) {
+      .wf_safety_abort(
+        "target_identity_invalid",
+        "The verified target changed after its identity was recorded.",
+        "x"
+      )
+    }
+    identities$target <- x$identity
+    identities$source <- x$evidence$source_checksum
+    identities$source_data <- x$evidence$data_checksum
+  } else if (inherits(x, "wf_design_data")) {
+    if (!identical(x$identity, .wf_design_identity(x$data, x$roles))) {
+      .wf_safety_abort(
+        "design_identity_invalid",
+        "The design data changed after their identity was recorded.",
+        "x"
+      )
+    }
+    identities$design <- x$identity
+  }
+  identity_names <- c(
+    "design", "target", "cell_plan", "plan", "approval",
+    "locked_weight", "source", "source_data", "impact"
+  )
+  for (name in setdiff(identity_names, names(identities))) {
+    identities[name] <- list(NULL)
+  }
+  identities <- identities[identity_names]
 
   input_hashes <- NULL
   if (!is.null(inputs)) {
@@ -1252,23 +1389,63 @@ print.wf_validation <- function(x, ...) {
     input_hashes <- vapply(inputs, .wf_object_hash, character(1))
   }
 
-  list(
-    schema = "wfc_audit_v1",
-    exported = .wf_iso_time(),
-    package = list(name = "WFC", version = .wf_package_version()),
-    object_class = object_class,
-    n_units = nrow(weights$data),
-    groups = unique(.chr(weights$data$group)),
-    weight_summary = list(
+  n_units <- if (!is.null(weights) && is.data.frame(weights$data)) {
+    nrow(weights$data)
+  } else if (inherits(x, "wf_safe_workflow")) {
+    nrow(x$design$data)
+  } else if (inherits(x, "wf_design_data")) {
+    nrow(x$data)
+  } else {
+    NULL
+  }
+  groups <- if (!is.null(weights) && is.data.frame(weights$data) &&
+      "group" %in% names(weights$data)) {
+    unique(.chr(weights$data$group))
+  } else if (inherits(x, "wf_safe_workflow")) {
+    names(x$target$groups)
+  } else if (inherits(x, "wf_verified_target")) {
+    names(x$groups)
+  } else {
+    NULL
+  }
+  weight_summary <- if (!is.null(weights) && is.data.frame(weights$data) &&
+      "weight" %in% names(weights$data)) {
+    list(
       total = sum(weights$data$weight),
       min = min(weights$data$weight),
       max = max(weights$data$weight),
       mean = mean(weights$data$weight)
-    ),
-    provenance = weights$provenance,
+    )
+  } else {
+    NULL
+  }
+  provenance <- if (!is.null(weights)) {
+    weights$provenance
+  } else if (inherits(x, "wf_safe_workflow")) {
+    list(
+      workflow_identity = x$identity,
+      method = x$plan$method,
+      package_version = x$package_version
+    )
+  } else if (!is.null(x$provenance)) {
+    x$provenance
+  } else {
+    NULL
+  }
+
+  list(
+    schema = "wfc_audit_v2",
+    exported = .wf_iso_time(),
+    package = list(name = "WFC", version = .wf_package_version()),
+    object_class = object_class,
+    n_units = n_units,
+    groups = groups,
+    weight_summary = weight_summary,
+    provenance = provenance,
     decision_ledger = ledger,
     diagnostics = diagnostics,
     input_hashes = input_hashes,
+    identities = identities,
     extra = extra
   )
 }
@@ -1280,7 +1457,8 @@ print.wf_validation <- function(x, ...) {
 #' extra metadata. The writer is dependency-free and intended for machine
 #' archiving, not human formatting.
 #'
-#' @param x A `wf_weights` or `wf_autoweigh_result` object.
+#' @param x A WFC result, safe workflow, plan, approval, locked weights, verified
+#'   target, design-data object, or post-lock impact object.
 #' @param file Output JSON file path.
 #' @param inputs Optional named list of input objects whose hashes should be
 #'   recorded.
@@ -1289,9 +1467,14 @@ print.wf_validation <- function(x, ...) {
 #' @return Invisibly returns `file`.
 #' @export
 wf_audit_export <- function(x, file, inputs = NULL, extra = NULL) {
-  if (!inherits(x, "wf_weights") && !inherits(x, "wf_autoweigh_result")) {
+  supported <- c(
+    "wf_weights", "wf_autoweigh_result", "wf_safe_workflow",
+    "wf_weight_plan", "wf_cell_merge_plan", "wf_plan_approval",
+    "wf_verified_target", "wf_design_data", "wf_impact"
+  )
+  if (!inherits(x, supported)) {
     wf_abort(
-      "`x` must be a wf_weights or wf_autoweigh_result object.",
+      "`x` must be a supported WFC result or safe-workflow evidence object.",
       "wf_error_input"
     )
   }

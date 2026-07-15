@@ -30,4 +30,5 @@ tmp/
 # Local private data and Chinese working documents (never commit)
 private-data/
 *.xlsx
+!inst/extdata/*.xlsx
 ZH/

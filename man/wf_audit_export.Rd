@@ -7,7 +7,8 @@
 wf_audit_export(x, file, inputs = NULL, extra = NULL)
 }
 \arguments{
-\item{x}{A \code{wf_weights} or \code{wf_autoweigh_result} object.}
+\item{x}{A WFC result, safe workflow, plan, approval, locked weights, verified
+target, design-data object, or post-lock impact object.}
 
 \item{file}{Output JSON file path.}
 

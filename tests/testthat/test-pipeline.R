@@ -232,7 +232,7 @@ test_that("wf_audit_export writes provenance and input hashes", {
 
   expect_identical(out, path)
   expect_true(file.exists(path))
-  expect_match(text, "\"schema\":\"wfc_audit_v1\"", fixed = TRUE)
+  expect_match(text, "\"schema\":\"wfc_audit_v2\"", fixed = TRUE)
   expect_match(text, "\"pipeline_hash\"", fixed = TRUE)
   expect_match(text, "\"input_hashes\"", fixed = TRUE)
   expect_match(text, "\"release\":\"0.13.0\"", fixed = TRUE)

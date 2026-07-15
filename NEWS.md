@@ -1,3 +1,30 @@
+# WFC 1.1.0
+
+Safety-oriented weighting workflow. This release adds a controlled path for
+bringing the defensible parts of external calibration workflows into WFC while
+preventing outcome-driven target or weight adjustment.
+
+* Added `wf_prepare_design()` to create a design-only object that rejects
+  undeclared columns and keeps outcome variables outside weight planning.
+* Added CSV and optional Excel target/reference import with sidecar DCF source
+  metadata, SHA-256 verification, stable identities, and bundled import samples.
+* Added outcome-blind cell-merge and weight plans. Category changes must follow
+  an explicit ladder; the planner never widens limits, relaxes targets, changes
+  method, or executes automatically.
+* Added human-attested plan approval and exact execution. Approvals are bound to
+  plan identity, and locked weights retain design, target, plan, approval, and
+  source identities for audit.
+* Added a practitioner composition API and lower-level composable APIs suitable
+  for AI agents. Neither path can approve its own plan.
+* Added decision-maker and statistician report aliases, post-lock descriptive
+  impact assessment, and the `wfc_audit_v2` evidence schema.
+* Deprecated subjective manual targets, target shrinkage, inline moment targets,
+  manual pipeline target declarations, and runtime margin injection. They remain
+  compatible in 1.1 with a warning and are scheduled for removal in WFC 2.0.0.
+* Added controlled simulation validation, a `survey` reference comparison, and
+  CI enforcement of that reference check. Independent qualified statistical
+  review remains a separate release/reliance gate.
+
 # WFC 1.0.0
 
 * Standardized the maintainer and company contact identities, adopted GPL

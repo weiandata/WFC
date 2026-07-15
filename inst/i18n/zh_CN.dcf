@@ -2,6 +2,8 @@ report_title: 加权质量报告
 report_audience: 受众
 audience_manager: 管理者
 audience_analyst: 分析人员
+audience_decision: 决策人员
+audience_statistician: 统计专业人员
 verdict_green: 可单独发布
 verdict_yellow: 可用但需谨慎；建议合并发布
 verdict_red: 不建议单独发布；请合并或整改
@@ -11,6 +13,8 @@ action_weights_red: 不建议单独发布；请合并或整改
 action_blend_green: 可单独发布
 action_blend_yellow: 可用但需谨慎；请检查融合系数敏感性
 action_blend_red: 不建议单独发布；其中一个来源缺乏支持
+action_safe_review: 执行前请由独立的人类审核者确认
+action_safe_resolve: 请先解决阻塞性检查；不得批准或执行
 section_propensity_overlap: 倾向得分重叠
 section_propensity_quantiles: 倾向得分分位数
 section_propensity_balance: 倾向得分协变量平衡
@@ -20,6 +24,13 @@ section_pipeline_stages: 加权流水线阶段
 section_blend_lambda: 融合系数
 section_blend_sensitivity: 融合敏感性
 section_blend_source_support: 融合来源支持度
+section_source_evidence: 外部来源证据
+section_precheck_issues: 校准前检查
+section_cell_map: 原始到最终单元格映射
+section_cell_reasons: 单元格合并原因
+section_cells_before: 合并前单元格
+section_cells_after: 合并后单元格
+section_lock_evidence: 锁定权重身份凭据
 column_group: 群组
 column_n: 样本量
 column_ess: 有效样本量
@@ -56,6 +67,23 @@ column_smd_weighted: 加权标准化差异
 column_stage: 阶段
 column_label: 标签
 column_method: 方法
+column_status: 工作流状态
+column_ready: 可提交审核
+column_affected_share: 受影响样本占比
+column_unresolved: 未解决单元格数量
+column_next_action: 必须执行的下一步
+column_field: 证据字段
+column_value: 证据内容
+column_evidence: 证据类型
+column_identity: SHA-256 身份标识
+column_outcome: 结果变量
+column_unweighted: 未加权估计
+column_weighted: 加权估计
+column_difference: 加权前后差值
+column_kish_ess: Kish 有效样本量
+column_se: 正态近似标准误
+column_conf_low: 置信区间下限
+column_conf_high: 置信区间上限
 plot_group_title: 群组 %s
 plot_weight: 权重
 plot_design_effect: 设计效应

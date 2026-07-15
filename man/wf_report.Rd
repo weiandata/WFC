@@ -7,18 +7,20 @@
 wf_report(
   w,
   target = NULL,
-  audience = c("manager", "analyst"),
+  audience = c("manager", "analyst", "decision", "statistician"),
   lang = NULL,
   output = c("object", "markdown", "html"),
   file = NULL
 )
 }
 \arguments{
-\item{w}{A \code{wf_weights} or \code{wf_blend_result} object.}
+\item{w}{A \code{wf_weights}, \code{wf_blend_result}, \code{wf_safe_workflow}, or
+\code{wf_impact} object.}
 
 \item{target}{Optional \code{wf_target} for margin-residual diagnostics.}
 
-\item{audience}{Report projection: \code{"manager"} or \code{"analyst"}.}
+\item{audience}{Report projection: \code{"manager"}/\code{"decision"} for a compact
+decision view or \code{"analyst"}/\code{"statistician"} for full detail.}
 
 \item{lang}{Output language. Resolution follows explicit argument,
 \code{options(wfc.lang)}, session locale, then English fallback.}

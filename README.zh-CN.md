@@ -44,7 +44,7 @@ remotes::install_github("weiandata/WFC")
 或从源码压缩包安装：
 
 ```r
-install.packages("WFC_1.0.0.tar.gz", repos = NULL, type = "source")
+install.packages("WFC_1.1.0.tar.gz", repos = NULL, type = "source")
 ```
 
 ## 工作流概览
@@ -79,6 +79,122 @@ precheck
 weights <- wf_rake(wfc_example$sample, target, id = "id")
 wf_diagnose(weights, target = target)
 ```
+
+<!-- SAFE_WORKFLOW_START -->
+## 经来源验证、与结果变量隔离的工作流（WFC 1.1）
+
+当权重可能影响研究结论时，请使用这条流程。规划阶段只能接触 ID、抽样设计字段和
+预先声明的校准变量；研究结果放在另一张表中，等权重锁定后才能接回。目标数据必须
+来自外部 CSV 或 Excel 文件，并为每个文件配一份独立的 `.source.dcf` 来源说明；其中
+记录的 SHA-256 必须与数据文件一致。
+
+包内提供两套内容一致的合成导入样本：
+
+- `safe-target-example.csv` 与 `safe-target-example.csv.source.dcf`
+- `safe-target-example.xlsx` 与 `safe-target-example.xlsx.source.dcf`
+
+样本被明确标记为 `demo_only: true`，所以演示时必须写 `production = FALSE`，正式分析
+无法误用它们。
+
+```r
+library(WFC)
+
+dims_safe <- wf_dims(
+  sex = c("F", "M"),
+  age = c("18-34", "35+")
+)
+design_frame <- data.frame(
+  id = sprintf("r%02d", 1:16),
+  sex = rep(c("F", "M"), 8),
+  age = rep(c("18-34", "18-34", "35+", "35+"), 4),
+  base_weight = 1
+)
+analysis_frame <- data.frame(
+  id = design_frame$id,
+  satisfaction = seq(40, 70, length.out = 16)
+)
+
+# 1. 准备只含设计信息的数据；任何未声明的列都会阻止继续。
+design <- wf_prepare_design(
+  design_frame,
+  id = "id",
+  calibration = c("sex", "age"),
+  base_weight = "base_weight"
+)
+
+# 2. 同时导入目标文件和它自己的来源说明。
+target_file <- system.file(
+  "extdata", "safe-target-example.csv", package = "WFC"
+)
+source_file <- paste0(target_file, ".source.dcf")
+target_verified <- wf_import_target(
+  target_file,
+  source_file,
+  dims_safe,
+  key_map = c(sex = "sex", age = "age"),
+  count = "count",
+  production = FALSE
+)
+
+# Excel 导入形式相同，但必须使用 Excel 文件自己的校验码。
+xlsx_file <- system.file(
+  "extdata", "safe-target-example.xlsx", package = "WFC"
+)
+if (requireNamespace("openxlsx", quietly = TRUE)) {
+  target_from_excel <- wf_import_target(
+    xlsx_file,
+    paste0(xlsx_file, ".source.dcf"),
+    dims_safe,
+    key_map = c(sex = "sex", age = "age"),
+    count = "count",
+    production = FALSE
+  )
+}
+
+# 3. 先规划单元格和权重；这两个函数都不会计算权重。
+# 必须先把演示路径替换成来源完整的权威目标；demo_only 目标会被规划阶段拒绝。
+cell_plan <- wf_plan_cells(design, target_verified, dims_safe)
+plan <- wf_plan_weights(
+  design,
+  target_verified,
+  dims_safe,
+  method = "raking",
+  cell_plan = cell_plan
+)
+plan$precheck
+
+# 4. 由人类审核者在独立步骤中批准。
+approval <- wf_approve_plan(plan, "审核者姓名", "statistician")
+
+# 5. 严格执行已批准计划并锁定权重。
+locked <- wf_execute_plan(plan, approval, design, target_verified)
+
+# 6. 按完全一致的 ID 接回权重，再做不会重算权重的结果影响比较。
+analysis_ready <- wf_attach_weights(analysis_frame, locked, id = "id")
+impact <- wf_assess_impact(
+  locked,
+  analysis_frame,
+  id = "id",
+  outcomes = "satisfaction"
+)
+
+# 7. 决策人员看摘要，统计人员看完整明细。
+wf_report(locked, audience = "decision", lang = "zh_CN")
+wf_report(impact, audience = "statistician", lang = "zh_CN")
+wf_audit_export(impact, tempfile(fileext = ".json"))
+```
+
+不熟悉编程的调查人员可使用 `wf_guided_plan()`，它会组合数据准备、来源验证、单元格
+规划和权重规划，但仍会停在批准与执行之前，而且不会读取结果变量。
+
+包内文件只用于演示导入格式。从规划开始的代码必须把 `target_file` 和 `source_file`
+换成来源说明完整的权威外部文件，并使用默认的 `production = TRUE` 重新导入后才能运行。
+
+AI Agent 应读取 `wf_error_safety` 中稳定的机器字段，包括 `code`、`severity`、`field`、
+`evidence` 与 `next_actions`，然后把阻塞原因和下一步交给人类。Agent 不得自行批准：
+`wf_approve_plan(plan, "Agent", "assistant", actor_type = "agent")` 会被拒绝。接口没有
+force、bypass、ignore-source、auto-approve、auto-relax、auto-widen 或静默切换方法的参数。
+<!-- SAFE_WORKFLOW_END -->
 
 ## 引导式工作流与双语输出
 

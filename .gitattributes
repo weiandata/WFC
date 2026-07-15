@@ -1,0 +1,4 @@
+# Preserve byte-exact sample files covered by SHA-256 evidence records.
+inst/extdata/*.csv -text
+inst/extdata/*.xlsx -text
+inst/extdata/*.source.dcf text eol=lf

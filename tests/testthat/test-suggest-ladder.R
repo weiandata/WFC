@@ -33,12 +33,12 @@ make_ladder_draft_fixture <- function() {
       )
     )
   }))
-  target <- wf_target_manual(
+  target <- suppressWarnings(wf_target_manual(
     margins,
     dims,
     by = "region",
     group_col = "region"
-  )
+  ))
   list(sample = sample, dims = dims, target = target)
 }
 
