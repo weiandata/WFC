@@ -170,3 +170,30 @@ proceeding with GitHub archival while that external confirmation was pending.
 When CRAN responds, the response date and resulting index status must be added
 to this maintained WFC record; the predecessor repository must not be reopened
 merely to add the CRAN follow-up.
+
+#### CRAN clarification exchange
+
+On 2026-07-16, the maintainer supplied a reply from CRAN team member Uwe
+Ligges. CRAN was preparing to archive `ratecalib` and add a link to WFC, but
+asked what WFC was because it was not present on CRAN. The exact timestamp of
+the incoming CRAN reply was not supplied for this repository record.
+
+The registered maintainer reported sending a clarification reply on
+2026-07-16 at 14:04 Asia/Kuala_Lumpur (06:04 UTC). The reply stated that:
+
+- WFC is not currently on CRAN;
+- the maintained public repository is <https://github.com/weiandata/WFC>;
+- the WFC 2.0.0 release is available at
+  <https://github.com/weiandata/WFC/releases/tag/v2.0.0>; and
+- CRAN may use the external GitHub repository as the successor link, or archive
+  `ratecalib` without a successor link if external links are not appropriate.
+
+Evidence form: the maintainer supplied the message text and reported send time
+in the project task. No mailbox export or original email file is stored in this
+repository.
+
+A fresh official-index query on 2026-07-16 still returned `TRUE` for
+`ratecalib` and `FALSE` for WFC. The WFC repository remained public and active,
+and the WFC 2.0.0 release remained published. This clarification is not the
+final CRAN archival confirmation; the resulting CRAN index status still needs
+to be recorded when processing is complete.
