@@ -297,7 +297,7 @@ or retry after viewing outcomes.
 
 ## Migration from WFC 1.x
 
-See [Migrating from WFC 1.x to WFC 2.0](docs/migration/wfc-1-to-2.md). Behavior
+See [Migrating from WFC 1.x to WFC 2.0](https://github.com/weiandata/WFC/blob/main/docs/migration/wfc-1-to-2.md). Behavior
 that selected desired results has no compatibility switch and no supported
 replacement.
 

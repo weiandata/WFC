@@ -38,6 +38,14 @@ The notes were:
    documentation, example, test, and vignette checks. This note concerns the
    local external HTML Tidy executable rather than generated R documentation.
 
+On the Windows builder the second note is replaced by a "New submission" note
+whose body also lists possibly misspelled words in DESCRIPTION and a possibly
+invalid file URI. The flagged words are spelled correctly: `Deville`,
+`Saerndal` and `Hainmueller` are cited author surnames, and `precheck` and
+`predeclared` are established package terms. The flagged file URI in `README.md`
+now uses the full GitHub URL of the migration guide so it resolves from the
+installed package.
+
 There are no downstream dependencies because this is a first submission.
 
 The check was run under both an `en_US.UTF-8` and a `zh_CN.UTF-8` session and
