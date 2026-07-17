@@ -75,9 +75,17 @@ PR #8.
   migration-guide link with its full GitHub URL and recorded the
   misspelled-words clarification in `cran-comments.md`.
 
+## Submission
+
+The maintainer reported that WFC 2.0.0 was submitted to CRAN through the web
+form on 2026-07-18 and is awaiting review. Evidence form: the maintainer
+reported the submission in the project task; no submission receipt or email is
+stored in this repository. This records that the upload was made, not that CRAN
+has accepted or indexed the package.
+
 ## Remaining boundary
 
 The DOIs in `DESCRIPTION` were confirmed against CrossRef to resolve to the
-cited Deville and Saerndal (1992) and Hainmueller (2012) papers. No CRAN upload
-had been performed when this record was written; the resulting CRAN index
-status must be recorded here once submission is complete.
+cited Deville and Saerndal (1992) and Hainmueller (2012) papers. The resulting
+CRAN index status must be recorded here once CRAN processing completes, whether
+the package is accepted, archived, or requires a resubmission.
