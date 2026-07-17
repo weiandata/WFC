@@ -40,6 +40,41 @@ The notes were:
 
 There are no downstream dependencies because this is a first submission.
 
+The check was run under both an `en_US.UTF-8` and a `zh_CN.UTF-8` session and
+reported the same result in each. WFC localizes its reports, so the test suite
+pins the report language and neutralizes the session locale rather than
+inheriting it.
+
+## Examples
+
+Most exported functions are documented without executable examples, and
+`wf_report()` keeps one `\dontrun{}` block. This is a deliberate safety
+property of the package rather than an oversight, and we would appreciate
+guidance if CRAN would prefer a different presentation.
+
+WFC constructs weights only from an external population target whose evidence
+record has been verified, and only after an identified human has approved the
+resulting plan. Two consequences follow:
+
+1. The bundled example target ships with `demo_only` status. It can demonstrate
+   import and checksum verification, and `wf_prepare_design()` and
+   `wf_import_target()` carry running examples that also show the
+   corresponding refusals, but by design that target cannot enter planning. No
+   synthetic file shipped with the package is permitted to impersonate an
+   authoritative population source, so a self-contained example cannot
+   legitimately reach `wf_plan_weights()`, `wf_calibrate()`, `wf_rake()` or the
+   diagnostics that consume locked weights.
+2. `wf_approve_plan()` records an accountable human reviewer's identity. An
+   example that supplied that identity would be an automated process attesting
+   a human review, which is exactly what the package is built to prevent.
+
+The full workflow is therefore demonstrated, with the same reasoning stated
+inline, in the `safe-weighting-workflow` vignette. The gated steps appear there
+as unevaluated but copy-runnable code. Package behavior is covered instead by
+the test suite, which exercises the complete path, including planning,
+approval, execution and reporting, against fixtures that are confined to the
+tests and never installed as usable authority.
+
 ## Additional verification
 
 * Twelve adversarial checks cover manual margins, pass-rate and outcome targets,

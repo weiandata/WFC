@@ -23,6 +23,35 @@
 #' @param fpc Optional names of finite-population-correction columns.
 #'
 #' @return A `wf_design_data` object.
+#' @examples
+#' design_frame <- data.frame(
+#'   id = sprintf("r%02d", 1:8),
+#'   sex = rep(c("F", "M"), 4),
+#'   age = rep(c("18-34", "35+"), each = 4),
+#'   base_weight = 1,
+#'   stringsAsFactors = FALSE
+#' )
+#'
+#' design <- wf_prepare_design(
+#'   design_frame,
+#'   id = "id",
+#'   calibration = c("sex", "age"),
+#'   base_weight = "base_weight"
+#' )
+#' design
+#'
+#' # An outcome column has no declared design role, so it blocks construction
+#' # instead of silently entering weight planning.
+#' with_outcome <- cbind(
+#'   design_frame,
+#'   satisfaction = seq(40, 70, length.out = 8)
+#' )
+#' try(wf_prepare_design(
+#'   with_outcome,
+#'   id = "id",
+#'   calibration = c("sex", "age"),
+#'   base_weight = "base_weight"
+#' ))
 #' @export
 wf_prepare_design <- function(data, id, calibration, base_weight = NULL,
                               strata = NULL, clusters = NULL, fpc = NULL) {
