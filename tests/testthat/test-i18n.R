@@ -1,13 +1,24 @@
 with_language_environment <- function(code, language = "", lang = "") {
+  vars <- c("LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG")
   old_options <- options(wfc.lang = NULL)
-  old_language <- Sys.getenv("LANGUAGE", unset = NA_character_)
-  old_lang <- Sys.getenv("LANG", unset = NA_character_)
+  old_env <- Sys.getenv(vars, unset = NA_character_)
+  old_ctype <- Sys.getlocale("LC_CTYPE")
   on.exit({
     options(old_options)
-    if (is.na(old_language)) Sys.unsetenv("LANGUAGE") else
-      Sys.setenv(LANGUAGE = old_language)
-    if (is.na(old_lang)) Sys.unsetenv("LANG") else Sys.setenv(LANG = old_lang)
+    for (var in vars) {
+      if (is.na(old_env[[var]])) {
+        Sys.unsetenv(var)
+      } else {
+        do.call(Sys.setenv, stats::setNames(list(old_env[[var]]), var))
+      }
+    }
+    suppressWarnings(Sys.setlocale("LC_CTYPE", old_ctype))
   }, add = TRUE)
+  # .wf_lang() also inspects LC_ALL, LC_MESSAGES and the C-level LC_CTYPE.
+  # Neutralize all three so the resolved language depends only on the
+  # LANGUAGE/LANG values this helper simulates, not on the host locale.
+  Sys.unsetenv(c("LC_ALL", "LC_MESSAGES"))
+  suppressWarnings(Sys.setlocale("LC_CTYPE", "C"))
   Sys.setenv(LANGUAGE = language, LANG = lang)
   force(code)
 }
