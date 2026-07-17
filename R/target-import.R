@@ -387,6 +387,38 @@ wf_target_template <- function(file, dims, by = NULL, example = FALSE) {
 #' @param production Whether to reject demo-only sources.
 #'
 #' @return A `wf_verified_target` object.
+#' @examples
+#' # WFC ships a synthetic demo target beside its companion evidence record.
+#' csv_file <- system.file(
+#'   "extdata", "safe-target-example.csv",
+#'   package = "WFC"
+#' )
+#' csv_source <- paste0(csv_file, ".source.dcf")
+#'
+#' dims_safe <- wf_dims(sex = c("F", "M"), age = c("18-34", "35+"))
+#'
+#' # `production = FALSE` is required here only because the bundled file is
+#' # declared demo-only. Do not use it to admit an authoritative source whose
+#' # evidence record is incomplete.
+#' target <- wf_import_target(
+#'   csv_file,
+#'   csv_source,
+#'   dims_safe,
+#'   key_map = c(sex = "sex", age = "age"),
+#'   count = "count",
+#'   production = FALSE
+#' )
+#' target$identity
+#'
+#' # The same demo file is refused as a production source, so a synthetic
+#' # file cannot impersonate an authoritative population.
+#' try(wf_import_target(
+#'   csv_file,
+#'   csv_source,
+#'   dims_safe,
+#'   key_map = c(sex = "sex", age = "age"),
+#'   count = "count"
+#' ))
 #' @export
 wf_import_target <- function(data_file, source_file, dims, key_map, count,
                              by = NULL, by_key = NULL, production = TRUE) {
